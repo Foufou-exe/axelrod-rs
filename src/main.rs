@@ -12,8 +12,8 @@ fn main() {
    ▄   ██                                                    ██                                    
    ▀████▀                                                  ▀▀▀                                                                                                                                                                                                                                                                     
 "#;
-
     println!("{}", titre);
+    println!("");
     println!("Bienvenue dans l'arène !\n");
 
     // 2. Définition des choix d'adversaires
