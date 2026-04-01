@@ -2,10 +2,11 @@
 //!
 //! Each player can either cooperate or defect.
 
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// Represents an action in the Prisoner's Dilemma
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Action {
     /// Cooperate with the other player
     Cooperate,

@@ -7,10 +7,12 @@ use crate::game::{Match, MatchConfig, MatchResult};
 use crate::player::Player;
 use crate::strategy::StrategyType;
 use comfy_table::{presets::UTF8_FULL, Cell, ContentArrangement, Table};
+use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Player score in the tournament
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerScore {
     /// Strategy name
     pub name: String,
@@ -29,13 +31,14 @@ pub struct PlayerScore {
 }
 
 /// Complete tournament result
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TournamentResult {
     /// Player rankings (from best to worst)
     pub rankings: Vec<PlayerScore>,
     /// All match results
     pub match_results: Vec<MatchResult>,
-    /// Score matrix (strategy i vs strategy j)
+    /// Score matrix (strategy i vs strategy j) - serialized as a list
+    #[serde(skip)]
     pub score_matrix: HashMap<(StrategyType, StrategyType), (i32, i32)>,
 }
 
@@ -105,52 +108,64 @@ impl RoundRobinTournament {
 
     /// Runs the tournament and returns the results
     pub fn run(&self) -> TournamentResult {
+        // Generate all match pairs
         let n = self.strategies.len();
-        let mut players: Vec<Player> = self.strategies.iter().map(|s| Player::new(*s)).collect();
-
-        let mut match_results = Vec::new();
-        let mut score_matrix: HashMap<(StrategyType, StrategyType), (i32, i32)> = HashMap::new();
-
-        // Each strategy plays against all others (including itself)
+        let mut match_pairs: Vec<(usize, usize)> = Vec::new();
         for i in 0..n {
             for j in i..n {
-                // Clone players for this match
-                let mut player1 = players[i].clone_fresh();
-                let mut player2 = players[j].clone_fresh();
+                match_pairs.push((i, j));
+            }
+        }
+
+        // Run matches in parallel
+        let match_results: Vec<(usize, usize, MatchResult)> = match_pairs
+            .par_iter()
+            .map(|&(i, j)| {
+                let mut player1 = Player::new(self.strategies[i]);
+                let mut player2 = Player::new(self.strategies[j]);
 
                 let result = {
                     let mut game = Match::new(&mut player1, &mut player2, self.config.clone());
                     game.play()
                 };
 
-                // Update total scores
-                players[i].add_score(result.score1);
-                players[i].cooperations += result.cooperations1;
-                players[i].rounds_played += result.rounds.len() as u32;
-                players[i].matches_played += 1;
+                (i, j, result)
+            })
+            .collect();
 
-                if i != j {
-                    // Match against a different opponent
-                    players[j].add_score(result.score2);
-                    players[j].cooperations += result.cooperations2;
-                    players[j].rounds_played += result.rounds.len() as u32;
-                    players[j].matches_played += 1;
+        // Aggregate results
+        let mut players: Vec<Player> = self.strategies.iter().map(|s| Player::new(*s)).collect();
+        let mut all_match_results = Vec::new();
+        let mut score_matrix: HashMap<(StrategyType, StrategyType), (i32, i32)> = HashMap::new();
 
-                    // Also record the reverse match in the matrix
-                    score_matrix.insert(
-                        (self.strategies[j], self.strategies[i]),
-                        (result.score2, result.score1),
-                    );
-                }
+        for (i, j, result) in match_results {
+            // Update player i
+            players[i].add_score(result.score1);
+            players[i].cooperations += result.cooperations1;
+            players[i].rounds_played += result.rounds.len() as u32;
+            players[i].matches_played += 1;
 
-                // Record in the score matrix
+            if i != j {
+                // Match against a different opponent
+                players[j].add_score(result.score2);
+                players[j].cooperations += result.cooperations2;
+                players[j].rounds_played += result.rounds.len() as u32;
+                players[j].matches_played += 1;
+
+                // Also record the reverse match in the matrix
                 score_matrix.insert(
-                    (self.strategies[i], self.strategies[j]),
-                    (result.score1, result.score2),
+                    (self.strategies[j], self.strategies[i]),
+                    (result.score2, result.score1),
                 );
-
-                match_results.push(result);
             }
+
+            // Record in the score matrix
+            score_matrix.insert(
+                (self.strategies[i], self.strategies[j]),
+                (result.score1, result.score2),
+            );
+
+            all_match_results.push(result);
         }
 
         // Create rankings
@@ -172,7 +187,7 @@ impl RoundRobinTournament {
 
         TournamentResult {
             rankings,
-            match_results,
+            match_results: all_match_results,
             score_matrix,
         }
     }

@@ -7,6 +7,8 @@
 //! Inspired by Robert Axelrod's work in "The Evolution of Cooperation" (1984).
 
 pub mod action;
+pub mod cli;
+pub mod export;
 pub mod game;
 pub mod history;
 pub mod payoff;
@@ -15,6 +17,7 @@ pub mod strategy;
 pub mod tournament;
 
 pub use action::Action;
+pub use cli::{Cli, Commands};
 pub use history::History;
 pub use payoff::PayoffMatrix;
 pub use player::Player;

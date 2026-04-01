@@ -11,6 +11,7 @@
 //! - 2R > T + S (6 > 5) to prevent alternating cooperation/defection
 
 use crate::action::Action;
+use serde::{Deserialize, Serialize};
 
 /// Points for mutual reward (both cooperate)
 pub const REWARD: i32 = 3;
@@ -25,7 +26,7 @@ pub const SUCKER: i32 = 0;
 pub const PUNISHMENT: i32 = 1;
 
 /// Payoff matrix for the Prisoner's Dilemma
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PayoffMatrix {
     /// Mutual reward (R)
     pub reward: i32,

@@ -7,11 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-01
+
+### Added
+
+- **CLI with clap**: Full command-line interface with subcommands
+  - `round-robin` - Run round-robin tournaments from CLI
+  - `ecological` - Run ecological/evolutionary tournaments from CLI
+  - `match` - Run 1v1 matches between specific strategies
+  - `strategies` - List all available strategies
+- **Export to CSV/JSON**: Export tournament and match results
+  - `--output results.json` or `--output results.csv`
+  - Automatic format detection based on file extension
+- **Seed support**: Reproducible simulations with `--seed <u64>`
+- **Noise/error probability**: Simulate execution errors with `--noise 0.05`
+  - Actions may be randomly flipped with the specified probability
+  - Useful for studying robustness of strategies
+- **Parallel execution**: Tournament matches run in parallel using rayon
+  - Significant speedup for round-robin and ecological tournaments
+- **Quiet mode**: `--quiet` flag for minimal output (useful for scripting)
+
 ### Changed
 
+- Interactive mode is now the fallback when no subcommand is provided
 - Replaced manual ASCII table rendering with `comfy-table` library for better display
 - Tables now automatically adapt to terminal width with dynamic content arrangement
 - Improved readability of tournament results, population evolution, and match displays
+- Updated noise configuration in interactive mode prompts
+
+### Technical
+
+- Added dependencies: `clap`, `serde`, `serde_json`, `csv`, `rayon`, `rand_chacha`
+- New modules: `cli.rs` (CLI definitions), `export.rs` (CSV/JSON export)
+- All result structs now derive `Serialize, Deserialize` for export support
+- `MatchConfig::with_rounds_and_noise()` constructor for noise configuration
+- `Match::play_with_rng()` method for seeded/reproducible matches
+- `StrategyType::from_name()` for CLI strategy lookup
+
+### CI/CD
+
+- Added GitHub Actions CI workflow (`.github/workflows/ci.yml`)
+  - Multi-platform builds (Linux, Windows, macOS)
+  - Automated tests, clippy lints, and format checks
+- Added GitHub Actions release workflow (`.github/workflows/release.yml`)
+  - Automatic binary releases on version tags
+  - Cross-compilation for Linux, Windows, macOS (x86_64 + ARM64)
 
 ## [0.1.0] - 2026-04-01
 
@@ -45,5 +85,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Uses `rand 0.10.0` with updated API (`rand::rng()`, `RngExt::random_range()`)
 - Handles Rust 2024 reserved keyword `gen` appropriately
 
-[Unreleased]: https://github.com/yourusername/axelrod-rs/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/yourusername/axelrod-rs/releases/tag/v0.1.0
+[Unreleased]: https://github.com/thibautmaurras/axelrod-rs/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/thibautmaurras/axelrod-rs/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/thibautmaurras/axelrod-rs/releases/tag/v0.1.0

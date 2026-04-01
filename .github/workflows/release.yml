@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact_name: axelrod-rs
+            asset_name: axelrod-rs-linux-x86_64
+
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            artifact_name: axelrod-rs.exe
+            asset_name: axelrod-rs-windows-x86_64.exe
+
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            artifact_name: axelrod-rs
+            asset_name: axelrod-rs-macos-x86_64
+
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            artifact_name: axelrod-rs
+            asset_name: axelrod-rs-macos-aarch64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          # Linux
+          cp artifacts/axelrod-rs-linux-x86_64/axelrod-rs release/axelrod-rs-linux-x86_64
+          chmod +x release/axelrod-rs-linux-x86_64
+          # Windows
+          cp artifacts/axelrod-rs-windows-x86_64.exe/axelrod-rs.exe release/axelrod-rs-windows-x86_64.exe
+          # macOS x86_64
+          cp artifacts/axelrod-rs-macos-x86_64/axelrod-rs release/axelrod-rs-macos-x86_64
+          chmod +x release/axelrod-rs-macos-x86_64
+          # macOS ARM64
+          cp artifacts/axelrod-rs-macos-aarch64/axelrod-rs release/axelrod-rs-macos-aarch64
+          chmod +x release/axelrod-rs-macos-aarch64
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # Extract changelog for this version (if exists)
+          if [ -f CHANGELOG.md ]; then
+            sed -n "/^## \[$VERSION\]/,/^## \[/p" CHANGELOG.md | head -n -1 > release_notes.md
+            if [ ! -s release_notes.md ]; then
+              echo "Release $VERSION" > release_notes.md
+            fi
+          else
+            echo "Release $VERSION" > release_notes.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: v${{ steps.changelog.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            release/axelrod-rs-linux-x86_64
+            release/axelrod-rs-windows-x86_64.exe
+            release/axelrod-rs-macos-x86_64
+            release/axelrod-rs-macos-aarch64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

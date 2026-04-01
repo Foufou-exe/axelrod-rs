@@ -11,10 +11,12 @@ use crate::game::{Match, MatchConfig};
 use crate::player::Player;
 use crate::strategy::StrategyType;
 use comfy_table::{presets::UTF8_FULL, Cell, ContentArrangement, Table};
+use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Ecological tournament configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EcologicalConfig {
     /// Match configuration
     pub match_config: MatchConfig,
@@ -52,7 +54,7 @@ impl EcologicalConfig {
 }
 
 /// State of a generation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Generation {
     /// Generation number
     pub number: u32,
@@ -214,14 +216,11 @@ impl EcologicalTournament {
         generations
     }
 
-    /// Plays all matches of a generation and returns total scores
+    /// Plays all matches of a generation and returns total scores (parallelized)
     fn play_generation(
         &self,
         populations: &HashMap<StrategyType, u32>,
     ) -> HashMap<StrategyType, i32> {
-        let mut scores: HashMap<StrategyType, i32> =
-            self.strategies.iter().map(|&s| (s, 0)).collect();
-
         // List of active strategies
         let active: Vec<_> = populations
             .iter()
@@ -229,20 +228,21 @@ impl EcologicalTournament {
             .map(|(&s, _)| s)
             .collect();
 
-        // Each strategy plays against all others
+        // Generate all match pairs
+        let mut match_pairs: Vec<(usize, usize)> = Vec::new();
         for i in 0..active.len() {
             for j in i..active.len() {
+                match_pairs.push((i, j));
+            }
+        }
+
+        // Run matches in parallel
+        let match_results: Vec<(usize, usize, i32, i32)> = match_pairs
+            .par_iter()
+            .map(|&(i, j)| {
                 let strategy_i = active[i];
                 let strategy_j = active[j];
 
-                let pop_i = *populations.get(&strategy_i).unwrap_or(&0);
-                let pop_j = *populations.get(&strategy_j).unwrap_or(&0);
-
-                if pop_i == 0 || pop_j == 0 {
-                    continue;
-                }
-
-                // Play a representative match
                 let mut player1 = Player::new(strategy_i);
                 let mut player2 = Player::new(strategy_j);
 
@@ -252,27 +252,44 @@ impl EcologicalTournament {
                     game.play()
                 };
 
-                // Weight scores by population
-                // Number of interactions proportional to populations
-                let interactions = if i == j {
-                    // Self-match: n*(n-1)/2 interactions
-                    (pop_i * (pop_i - 1)) / 2
-                } else {
-                    // Match against other: n*m interactions
-                    pop_i * pop_j
-                };
+                (i, j, result.score1, result.score2)
+            })
+            .collect();
 
-                if i == j {
-                    // Self-match: both scores go to the same strategy
-                    let entry = scores.entry(strategy_i).or_insert(0);
-                    *entry += (result.score1 + result.score2) * interactions as i32 / 2;
-                } else {
-                    let entry_i = scores.entry(strategy_i).or_insert(0);
-                    *entry_i += result.score1 * interactions as i32;
+        // Aggregate scores
+        let mut scores: HashMap<StrategyType, i32> =
+            self.strategies.iter().map(|&s| (s, 0)).collect();
 
-                    let entry_j = scores.entry(strategy_j).or_insert(0);
-                    *entry_j += result.score2 * interactions as i32;
-                }
+        for (i, j, score1, score2) in match_results {
+            let strategy_i = active[i];
+            let strategy_j = active[j];
+
+            let pop_i = *populations.get(&strategy_i).unwrap_or(&0);
+            let pop_j = *populations.get(&strategy_j).unwrap_or(&0);
+
+            if pop_i == 0 || pop_j == 0 {
+                continue;
+            }
+
+            // Weight scores by population
+            let interactions = if i == j {
+                // Self-match: n*(n-1)/2 interactions
+                (pop_i * (pop_i - 1)) / 2
+            } else {
+                // Match against other: n*m interactions
+                pop_i * pop_j
+            };
+
+            if i == j {
+                // Self-match: both scores go to the same strategy
+                let entry = scores.entry(strategy_i).or_insert(0);
+                *entry += (score1 + score2) * interactions as i32 / 2;
+            } else {
+                let entry_i = scores.entry(strategy_i).or_insert(0);
+                *entry_i += score1 * interactions as i32;
+
+                let entry_j = scores.entry(strategy_j).or_insert(0);
+                *entry_j += score2 * interactions as i32;
             }
         }
 

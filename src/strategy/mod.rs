@@ -29,6 +29,7 @@ pub use tit_for_two_tats::TitForTwoTats;
 
 use crate::action::Action;
 use crate::history::History;
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 /// Trait defining a strategy for the Prisoner's Dilemma
@@ -61,7 +62,7 @@ impl Clone for Box<dyn Strategy> {
 }
 
 /// Enumeration of all available strategies
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum StrategyType {
     AlwaysCooperate,
     AlwaysDefect,
@@ -130,6 +131,14 @@ impl StrategyType {
             StrategyType::HardGoByMajority => "Hard Go By Majority",
             StrategyType::SoftGoByMajority => "Soft Go By Majority",
         }
+    }
+
+    /// Find a strategy by name (case-insensitive)
+    pub fn from_name(name: &str) -> Option<StrategyType> {
+        let name_lower = name.to_lowercase();
+        StrategyType::all()
+            .into_iter()
+            .find(|s| s.name().to_lowercase() == name_lower)
     }
 }
 

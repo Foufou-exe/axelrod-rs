@@ -6,22 +6,27 @@ use crate::action::Action;
 use crate::history::History;
 use crate::payoff::PayoffMatrix;
 use crate::player::Player;
+use rand::{Rng, RngExt};
+use serde::{Deserialize, Serialize};
 
 /// Match configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MatchConfig {
     /// Number of rounds per match
     pub rounds: u32,
     /// Payoff matrix to use
     pub payoff_matrix: PayoffMatrix,
+    /// Noise probability (0.0 to 1.0) - chance of action being flipped
+    pub noise: f64,
 }
 
 impl MatchConfig {
-    /// Default configuration (200 rounds, classic matrix)
+    /// Default configuration (200 rounds, classic matrix, no noise)
     pub fn default() -> Self {
         Self {
             rounds: 200,
             payoff_matrix: PayoffMatrix::classic(),
+            noise: 0.0,
         }
     }
 
@@ -30,6 +35,7 @@ impl MatchConfig {
         Self {
             rounds,
             payoff_matrix,
+            noise: 0.0,
         }
     }
 
@@ -38,16 +44,32 @@ impl MatchConfig {
         Self {
             rounds,
             payoff_matrix: PayoffMatrix::classic(),
+            noise: 0.0,
         }
+    }
+
+    /// Configuration with rounds and noise
+    pub fn with_rounds_and_noise(rounds: u32, noise: f64) -> Self {
+        Self {
+            rounds,
+            payoff_matrix: PayoffMatrix::classic(),
+            noise: noise.clamp(0.0, 1.0),
+        }
+    }
+
+    /// Set noise probability
+    pub fn set_noise(&mut self, noise: f64) -> &mut Self {
+        self.noise = noise.clamp(0.0, 1.0);
+        self
     }
 }
 
 /// Result of a round
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoundResult {
-    /// Action of player 1
+    /// Action of player 1 (after noise)
     pub action1: Action,
-    /// Action of player 2
+    /// Action of player 2 (after noise)
     pub action2: Action,
     /// Points earned by player 1
     pub score1: i32,
@@ -56,7 +78,7 @@ pub struct RoundResult {
 }
 
 /// Complete result of a match
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MatchResult {
     /// Name of player 1
     pub player1_name: String,
@@ -144,8 +166,23 @@ impl<'a> Match<'a> {
         Self::new(player1, player2, MatchConfig::default())
     }
 
+    /// Apply noise to an action (potentially flip it)
+    fn apply_noise(&self, action: Action, rng: &mut impl Rng) -> Action {
+        if self.config.noise > 0.0 && rng.random_range(0.0..1.0) < self.config.noise {
+            action.opposite()
+        } else {
+            action
+        }
+    }
+
     /// Plays the match and returns the result
     pub fn play(&mut self) -> MatchResult {
+        let mut rng = rand::rng();
+        self.play_with_rng(&mut rng)
+    }
+
+    /// Plays the match with a specific RNG (for reproducibility)
+    pub fn play_with_rng(&mut self, rng: &mut impl Rng) -> MatchResult {
         // Reset strategies for a new match
         self.player1.reset_strategy();
         self.player2.reset_strategy();
@@ -162,8 +199,12 @@ impl<'a> Match<'a> {
 
         for _ in 0..self.config.rounds {
             // Each player decides their action
-            let action1 = self.player1.decide(&history1);
-            let action2 = self.player2.decide(&history2);
+            let intended_action1 = self.player1.decide(&history1);
+            let intended_action2 = self.player2.decide(&history2);
+
+            // Apply noise (potential execution error)
+            let action1 = self.apply_noise(intended_action1, rng);
+            let action2 = self.apply_noise(intended_action2, rng);
 
             // Calculate payoffs
             let (score1, score2) = self.config.payoff_matrix.get_payoffs(action1, action2);
@@ -172,7 +213,7 @@ impl<'a> Match<'a> {
             total_score1 += score1;
             total_score2 += score2;
 
-            // Count cooperations
+            // Count cooperations (actual actions after noise)
             if action1 == Action::Cooperate {
                 cooperations1 += 1;
             }
@@ -186,7 +227,7 @@ impl<'a> Match<'a> {
             self.player2.add_score(score2);
             self.player2.record_round(action2);
 
-            // Update histories
+            // Update histories (with actual actions, so players see what actually happened)
             history1.push(action1, action2);
             history2.push(action2, action1);
 
@@ -224,6 +265,7 @@ mod tests {
     fn test_match_config_default() {
         let config = MatchConfig::default();
         assert_eq!(config.rounds, 200);
+        assert_eq!(config.noise, 0.0);
     }
 
     #[test]
@@ -299,5 +341,19 @@ mod tests {
 
         // Two TFTs always cooperate together
         assert!((result.mutual_cooperation_rate() - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_noise_config() {
+        let config = MatchConfig::with_rounds_and_noise(100, 0.1);
+        assert_eq!(config.rounds, 100);
+        assert_eq!(config.noise, 0.1);
+
+        // Test clamping
+        let config2 = MatchConfig::with_rounds_and_noise(100, 1.5);
+        assert_eq!(config2.noise, 1.0);
+
+        let config3 = MatchConfig::with_rounds_and_noise(100, -0.5);
+        assert_eq!(config3.noise, 0.0);
     }
 }
