@@ -1,3 +1,4 @@
+use comfy_table::{presets::UTF8_FULL, Cell, ContentArrangement, Table};
 use inquire::{Select, Text};
 
 use axelrod_rs::game::MatchConfig;
@@ -59,10 +60,15 @@ fn print_banner() {
         env!("CARGO_PKG_AUTHORS"),
         env!("CARGO_PKG_VERSION")
     );
-    println!("╔═══════════════════════════════════════════════════════════════════════════╗");
-    println!("║  Iterated Prisoner's Dilemma Simulator                                    ║");
-    println!("║  Explore the emergence of cooperation between automated strategies        ║");
-    println!("╚═══════════════════════════════════════════════════════════════════════════╝\n");
+
+    let mut table = Table::new();
+    table
+        .load_preset(UTF8_FULL)
+        .set_content_arrangement(ContentArrangement::Dynamic)
+        .add_row(vec![Cell::new(
+            "Iterated Prisoner's Dilemma Simulator\nExplore the emergence of cooperation between automated strategies",
+        )]);
+    println!("{}\n", table);
 }
 
 fn run_round_robin_tournament() {
@@ -230,72 +236,94 @@ fn run_1v1_match() {
                 game.play()
             };
 
-            println!("╔═══════════════════════════════════════════════════════════════╗");
-            println!("║                       MATCH RESULT                            ║");
-            println!("╠═══════════════════════════════════════════════════════════════╣");
-            println!(
-                "║ {:<25} : {:>5} points ({:>5.1}% coop)    ║",
-                truncate_str(&result.player1_name, 25),
-                result.score1,
-                result.cooperation_rate1() * 100.0
-            );
-            println!(
-                "║ {:<25} : {:>5} points ({:>5.1}% coop)    ║",
-                truncate_str(&result.player2_name, 25),
-                result.score2,
-                result.cooperation_rate2() * 100.0
-            );
-            println!("╠═══════════════════════════════════════════════════════════════╣");
+            // Match result table
+            let mut table = Table::new();
+            table
+                .load_preset(UTF8_FULL)
+                .set_content_arrangement(ContentArrangement::Dynamic)
+                .set_header(vec![
+                    Cell::new("Player"),
+                    Cell::new("Score"),
+                    Cell::new("Coop%"),
+                ]);
+
+            table.add_row(vec![
+                Cell::new(&result.player1_name),
+                Cell::new(result.score1),
+                Cell::new(format!("{:.1}%", result.cooperation_rate1() * 100.0)),
+            ]);
+            table.add_row(vec![
+                Cell::new(&result.player2_name),
+                Cell::new(result.score2),
+                Cell::new(format!("{:.1}%", result.cooperation_rate2() * 100.0)),
+            ]);
+
+            println!("        MATCH RESULT\n");
+            println!("{}", table);
 
             match result.winner() {
-                Some(winner) => println!("║ Winner: {:<52} ║", winner),
-                None => println!("║ Result: TIE                                               ║"),
+                Some(winner) => println!("\nWinner: {}", winner),
+                None => println!("\nResult: TIE"),
             }
 
             println!(
-                "║ Mutual cooperation: {:.1}%                                    ║",
+                "Mutual cooperation: {:.1}%",
                 result.mutual_cooperation_rate() * 100.0
             );
-            println!("╚═══════════════════════════════════════════════════════════════╝");
 
             // Display some rounds
             println!("\nFirst 10 rounds:");
+            let mut rounds_table = Table::new();
+            rounds_table
+                .load_preset(UTF8_FULL)
+                .set_content_arrangement(ContentArrangement::Dynamic)
+                .set_header(vec![
+                    Cell::new("Round"),
+                    Cell::new("P1"),
+                    Cell::new("P2"),
+                    Cell::new("Score"),
+                ]);
+
             for (i, round) in result.rounds.iter().take(10).enumerate() {
-                println!(
-                    "  Round {:>3}: {} vs {} -> ({:>2}, {:>2})",
-                    i + 1,
-                    round.action1,
-                    round.action2,
-                    round.score1,
-                    round.score2
-                );
+                rounds_table.add_row(vec![
+                    Cell::new(i + 1),
+                    Cell::new(format!("{}", round.action1)),
+                    Cell::new(format!("{}", round.action2)),
+                    Cell::new(format!("{} - {}", round.score1, round.score2)),
+                ]);
             }
+            println!("{}", rounds_table);
+
             if result.rounds.len() > 10 {
-                println!("  ... ({} rounds total)", result.rounds.len());
+                println!("... ({} rounds total)", result.rounds.len());
             }
         }
     }
 }
 
 fn display_strategies() {
-    println!("\n╔═══════════════════════════════════════════════════════════════════════════╗");
-    println!("║                        AVAILABLE STRATEGIES                              ║");
-    println!("╠═══════════════════════════════════════════════════════════════════════════╣");
-    println!("║ Name                     │ Nice │ Description                             ║");
-    println!("╠══════════════════════════╪══════╪═════════════════════════════════════════╣");
+    let mut table = Table::new();
+    table
+        .load_preset(UTF8_FULL)
+        .set_content_arrangement(ContentArrangement::Dynamic)
+        .set_header(vec![
+            Cell::new("Strategy"),
+            Cell::new("Nice"),
+            Cell::new("Description"),
+        ]);
 
     for strategy_type in StrategyType::all() {
         let strategy = strategy_type.create();
         let nice = if strategy.is_nice() { "Yes" } else { "No" };
-        println!(
-            "║ {:<24} │ {:>4} │ {:<39} ║",
-            truncate_str(strategy.name(), 24),
-            nice,
-            truncate_str(strategy.description(), 39)
-        );
+        table.add_row(vec![
+            Cell::new(strategy.name()),
+            Cell::new(nice),
+            Cell::new(strategy.description()),
+        ]);
     }
 
-    println!("╚═══════════════════════════════════════════════════════════════════════════╝");
+    println!("\n      AVAILABLE STRATEGIES\n");
+    println!("{}", table);
 
     println!("\nLegend:");
     println!("  Nice = Never defects first (winning characteristic according to Axelrod)");
@@ -303,12 +331,4 @@ fn display_strategies() {
 
 fn find_strategy_by_name(name: &str) -> Option<StrategyType> {
     StrategyType::all().into_iter().find(|s| s.name() == name)
-}
-
-fn truncate_str(s: &str, max_len: usize) -> String {
-    if s.len() <= max_len {
-        s.to_string()
-    } else {
-        format!("{}...", &s[..max_len - 3])
-    }
 }

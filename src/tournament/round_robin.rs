@@ -6,6 +6,7 @@
 use crate::game::{Match, MatchConfig, MatchResult};
 use crate::player::Player;
 use crate::strategy::StrategyType;
+use comfy_table::{presets::UTF8_FULL, Cell, ContentArrangement, Table};
 use std::collections::HashMap;
 
 /// Player score in the tournament
@@ -46,47 +47,32 @@ impl TournamentResult {
 
     /// Displays the formatted rankings
     pub fn display_rankings(&self) -> String {
-        let mut output = String::new();
-        output.push_str(
-            "\n╔═══════════════════════════════════════════════════════════════════════╗\n",
-        );
-        output.push_str(
-            "║                      TOURNAMENT RESULTS                               ║\n",
-        );
-        output.push_str(
-            "╠═══════════════════════════════════════════════════════════════════════╣\n",
-        );
-        output
-            .push_str("║ Rank │ Strategy                 │ Score  │ Avg/Match │ Coop%  │ Nice ║\n");
-        output
-            .push_str("╠══════╪══════════════════════════╪════════╪═══════════╪════════╪══════╣\n");
+        let mut table = Table::new();
+        table
+            .load_preset(UTF8_FULL)
+            .set_content_arrangement(ContentArrangement::Dynamic)
+            .set_header(vec![
+                Cell::new("Rank"),
+                Cell::new("Strategy"),
+                Cell::new("Score"),
+                Cell::new("Avg/Match"),
+                Cell::new("Coop%"),
+                Cell::new("Nice"),
+            ]);
 
         for (i, player) in self.rankings.iter().enumerate() {
             let nice_str = if player.is_nice { "Yes" } else { "No" };
-            output.push_str(&format!(
-                "║ {:>4} │ {:<24} │ {:>6} │ {:>9.1} │ {:>5.1}% │ {:>4} ║\n",
-                i + 1,
-                truncate_str(&player.name, 24),
-                player.total_score,
-                player.average_score,
-                player.cooperation_rate * 100.0,
-                nice_str
-            ));
+            table.add_row(vec![
+                Cell::new(i + 1),
+                Cell::new(&player.name),
+                Cell::new(player.total_score),
+                Cell::new(format!("{:.1}", player.average_score)),
+                Cell::new(format!("{:.1}%", player.cooperation_rate * 100.0)),
+                Cell::new(nice_str),
+            ]);
         }
 
-        output.push_str(
-            "╚═══════════════════════════════════════════════════════════════════════╝\n",
-        );
-        output
-    }
-}
-
-/// Truncates a string to a maximum length
-fn truncate_str(s: &str, max_len: usize) -> String {
-    if s.len() <= max_len {
-        s.to_string()
-    } else {
-        format!("{}...", &s[..max_len - 3])
+        format!("\n        TOURNAMENT RESULTS\n\n{}", table)
     }
 }
 

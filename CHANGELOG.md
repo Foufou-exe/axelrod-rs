@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Replaced manual ASCII table rendering with `comfy-table` library for better display
+- Tables now automatically adapt to terminal width with dynamic content arrangement
+- Improved readability of tournament results, population evolution, and match displays
+
 ## [0.1.0] - 2026-04-01
 
 ### Added

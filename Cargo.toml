@@ -7,3 +7,4 @@ authors = ["Thibaut Maurras"]
 [dependencies]
 inquire = "0.9.4"
 rand = "0.10.0"
+comfy-table = "7.2"

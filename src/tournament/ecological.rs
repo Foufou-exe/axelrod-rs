@@ -10,6 +10,7 @@
 use crate::game::{Match, MatchConfig};
 use crate::player::Player;
 use crate::strategy::StrategyType;
+use comfy_table::{presets::UTF8_FULL, Cell, ContentArrangement, Table};
 use std::collections::HashMap;
 
 /// Ecological tournament configuration
@@ -280,16 +281,14 @@ impl EcologicalTournament {
 
     /// Displays population evolution
     pub fn display_evolution(generations: &[Generation]) -> String {
-        let mut output = String::new();
-        output.push_str(
-            "\n╔═══════════════════════════════════════════════════════════════════════════╗\n",
-        );
-        output.push_str(
-            "║                       POPULATION EVOLUTION                                ║\n",
-        );
-        output.push_str(
-            "╠═══════════════════════════════════════════════════════════════════════════╣\n",
-        );
+        let mut table = Table::new();
+        table
+            .load_preset(UTF8_FULL)
+            .set_content_arrangement(ContentArrangement::Dynamic)
+            .set_header(vec![
+                Cell::new("Gen"),
+                Cell::new("Top Strategies (by population %)"),
+            ]);
 
         // Display some key generations
         let key_gens: Vec<usize> = if generations.len() <= 10 {
@@ -307,7 +306,6 @@ impl EcologicalTournament {
                 continue;
             }
             let generation = &generations[gen_idx];
-            output.push_str(&format!("║ Generation {:>3}: ", generation.number));
 
             let percentages = generation.population_percentages();
             let mut sorted: Vec<_> = percentages.iter().filter(|&(_, &p)| p > 0.5).collect();
@@ -319,35 +317,38 @@ impl EcologicalTournament {
                 .map(|(s, p)| format!("{}: {:.1}%", s, p))
                 .collect();
 
-            output.push_str(&format!("{:<57}║\n", display.join(", ")));
+            table.add_row(vec![
+                Cell::new(generation.number),
+                Cell::new(display.join(", ")),
+            ]);
         }
 
-        output.push_str(
-            "╠═══════════════════════════════════════════════════════════════════════════╣\n",
-        );
+        let mut output = format!("\n      POPULATION EVOLUTION\n\n{}\n", table);
 
         // Display the final result
         if let Some(last_gen) = generations.last() {
-            output.push_str(
-                "║ FINAL RESULT:                                                             ║\n",
-            );
+            let mut result_table = Table::new();
+            result_table
+                .load_preset(UTF8_FULL)
+                .set_content_arrangement(ContentArrangement::Dynamic)
+                .set_header(vec![Cell::new("FINAL RESULT")]);
+
             if let Some(dominant) = last_gen.dominant_strategy() {
                 let pop_pct = last_gen.population_percentages();
                 let pct = pop_pct.get(&dominant).unwrap_or(&0.0);
-                output.push_str(&format!(
-                    "║   Dominant strategy: {} ({:.1}% of population)            \n",
+                result_table.add_row(vec![Cell::new(format!(
+                    "Dominant: {} ({:.1}%)",
                     dominant, pct
-                ));
+                ))]);
             }
-            output.push_str(&format!(
-                "║   Surviving strategies: {}                                                \n",
+            result_table.add_row(vec![Cell::new(format!(
+                "Surviving strategies: {}",
                 last_gen.alive_strategies().len()
-            ));
+            ))]);
+
+            output.push_str(&format!("\n{}", result_table));
         }
 
-        output.push_str(
-            "╚═══════════════════════════════════════════════════════════════════════════╝\n",
-        );
         output
     }
 }
