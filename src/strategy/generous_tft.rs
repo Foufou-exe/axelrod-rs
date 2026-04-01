@@ -1,32 +1,32 @@
-//! Stratégie Generous Tit for Tat (GTFT)
+//! Generous Tit for Tat (GTFT) Strategy
 //!
-//! Variante de TFT qui pardonne occasionnellement les trahisons.
-//! - Coopère au premier tour
-//! - Copie l'adversaire, MAIS pardonne les trahisons avec une probabilité p
+//! A variant of TFT that occasionally forgives defections.
+//! - Cooperates on the first move
+//! - Copies opponent, BUT forgives defections with probability p
 //!
-//! Permet de briser les cycles de représailles mutuelles.
+//! Helps break cycles of mutual retaliation.
 
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
-use rand::Rng;
+use rand::RngExt;
 
-/// Stratégie Generous Tit for Tat
+/// Generous Tit for Tat strategy
 #[derive(Debug, Clone)]
 pub struct GenerousTitForTat {
-    /// Probabilité de pardonner une trahison (typiquement 0.05 à 0.10)
+    /// Probability of forgiving a defection (typically 0.05 to 0.10)
     forgiveness_probability: f64,
 }
 
 impl GenerousTitForTat {
-    /// Crée une nouvelle instance avec une probabilité de pardon personnalisée
+    /// Creates a new instance with a custom forgiveness probability
     pub fn new(forgiveness_probability: f64) -> Self {
         Self {
             forgiveness_probability: forgiveness_probability.clamp(0.0, 1.0),
         }
     }
 
-    /// Crée une instance avec la probabilité de pardon par défaut (5%)
+    /// Creates an instance with the default forgiveness probability (5%)
     pub fn default() -> Self {
         Self::new(0.05)
     }
@@ -38,7 +38,7 @@ impl Strategy for GenerousTitForTat {
     }
 
     fn description(&self) -> &'static str {
-        "Comme TFT mais pardonne parfois les trahisons (~5%)"
+        "Like TFT but sometimes forgives defections (~5%)"
     }
 
     fn decide(&mut self, history: &History) -> Action {
@@ -46,9 +46,9 @@ impl Strategy for GenerousTitForTat {
             None => Action::Cooperate,
             Some(Action::Cooperate) => Action::Cooperate,
             Some(Action::Defect) => {
-                // Pardonner avec une certaine probabilité
-                let mut rng = rand::thread_rng();
-                if Rng::r#gen::<f64>(&mut rng) < self.forgiveness_probability {
+                // Forgive with a certain probability
+                let mut rng = rand::rng();
+                if rng.random_range(0.0..1.0) < self.forgiveness_probability {
                     Action::Cooperate
                 } else {
                     Action::Defect
@@ -92,7 +92,7 @@ mod tests {
         let mut history = History::new();
 
         history.push(Action::Cooperate, Action::Defect);
-        // Avec probabilité 1, pardonne toujours
+        // With probability 1, always forgives
         assert_eq!(strategy.decide(&history), Action::Cooperate);
     }
 
@@ -102,7 +102,7 @@ mod tests {
         let mut history = History::new();
 
         history.push(Action::Cooperate, Action::Defect);
-        // Avec probabilité 0, ne pardonne jamais
+        // With probability 0, never forgives
         assert_eq!(strategy.decide(&history), Action::Defect);
     }
 

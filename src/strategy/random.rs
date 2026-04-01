@@ -1,29 +1,29 @@
-//! Stratégie Random (Aléatoire)
+//! Random Strategy
 //!
-//! Coopère ou trahit de manière aléatoire avec une probabilité de 50%.
-//! Utile comme baseline et pour tester la robustesse des autres stratégies.
+//! Cooperates or defects randomly with a 50% probability.
+//! Useful as a baseline and for testing the robustness of other strategies.
 
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
-use rand::Rng;
+use rand::RngExt;
 
-/// Stratégie aléatoire
+/// Random strategy
 #[derive(Debug, Clone)]
 pub struct Random {
-    /// Probabilité de coopérer (par défaut 0.5)
+    /// Probability of cooperating (default 0.5)
     cooperation_probability: f64,
 }
 
 impl Random {
-    /// Crée une nouvelle instance avec probabilité de coopération personnalisée
+    /// Creates a new instance with custom cooperation probability
     pub fn with_probability(cooperation_probability: f64) -> Self {
         Self {
             cooperation_probability: cooperation_probability.clamp(0.0, 1.0),
         }
     }
 
-    /// Crée une instance avec probabilité 50/50
+    /// Creates an instance with 50/50 probability
     pub fn new() -> Self {
         Self::with_probability(0.5)
     }
@@ -41,12 +41,12 @@ impl Strategy for Random {
     }
 
     fn description(&self) -> &'static str {
-        "Coopère ou trahit aléatoirement (50/50)"
+        "Cooperates or defects randomly (50/50)"
     }
 
     fn decide(&mut self, _history: &History) -> Action {
-        let mut rng = rand::thread_rng();
-        if Rng::r#gen::<f64>(&mut rng) < self.cooperation_probability {
+        let mut rng = rand::rng();
+        if rng.random_range(0.0..1.0) < self.cooperation_probability {
             Action::Cooperate
         } else {
             Action::Defect
@@ -54,7 +54,7 @@ impl Strategy for Random {
     }
 
     fn is_nice(&self) -> bool {
-        false // Peut trahir en premier
+        false // May defect first
     }
 
     fn clone_box(&self) -> Box<dyn Strategy> {
@@ -101,10 +101,10 @@ mod tests {
             }
         }
 
-        // Avec 1000 essais et p=0.5, on devrait avoir les deux
+        // With 1000 trials and p=0.5, we should have both
         assert!(cooperations > 0);
         assert!(defections > 0);
-        // Et environ 50% chacun (avec une marge)
+        // And approximately 50% each (with margin)
         assert!(cooperations > 400 && cooperations < 600);
     }
 

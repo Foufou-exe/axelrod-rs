@@ -1,44 +1,44 @@
-//! Matrice de gains (Payoff Matrix) pour le Dilemme du Prisonnier
+//! Payoff Matrix for the Prisoner's Dilemma
 //!
-//! Utilise la matrice classique d'Axelrod:
-//! - R (Reward) = 3 : Récompense mutuelle pour coopération
-//! - T (Temptation) = 5 : Tentation de trahir un coopérateur
-//! - S (Sucker) = 0 : Pénalité du "pigeon" (coopérer face à une trahison)
-//! - P (Punishment) = 1 : Punition mutuelle pour trahison
+//! Uses Axelrod's classic matrix:
+//! - R (Reward) = 3: Mutual reward for cooperation
+//! - T (Temptation) = 5: Temptation to defect against a cooperator
+//! - S (Sucker) = 0: Sucker's payoff (cooperating against a defector)
+//! - P (Punishment) = 1: Mutual punishment for defection
 //!
-//! Conditions du Dilemme du Prisonnier:
+//! Prisoner's Dilemma conditions:
 //! - T > R > P > S (5 > 3 > 1 > 0)
-//! - 2R > T + S (6 > 5) pour éviter l'alternance coopération/trahison
+//! - 2R > T + S (6 > 5) to prevent alternating cooperation/defection
 
 use crate::action::Action;
 
-/// Points pour la récompense mutuelle (les deux coopèrent)
+/// Points for mutual reward (both cooperate)
 pub const REWARD: i32 = 3;
 
-/// Points pour la tentation (trahir un coopérateur)
+/// Points for temptation (defect against a cooperator)
 pub const TEMPTATION: i32 = 5;
 
-/// Points du "pigeon" (coopérer face à une trahison)
+/// Sucker's points (cooperate against a defector)
 pub const SUCKER: i32 = 0;
 
-/// Points pour la punition mutuelle (les deux trahissent)
+/// Points for mutual punishment (both defect)
 pub const PUNISHMENT: i32 = 1;
 
-/// Matrice de gains pour le Dilemme du Prisonnier
+/// Payoff matrix for the Prisoner's Dilemma
 #[derive(Debug, Clone)]
 pub struct PayoffMatrix {
-    /// Récompense mutuelle (R)
+    /// Mutual reward (R)
     pub reward: i32,
-    /// Tentation de trahir (T)
+    /// Temptation to defect (T)
     pub temptation: i32,
-    /// Pénalité du pigeon (S)
+    /// Sucker's payoff (S)
     pub sucker: i32,
-    /// Punition mutuelle (P)
+    /// Mutual punishment (P)
     pub punishment: i32,
 }
 
 impl PayoffMatrix {
-    /// Crée une nouvelle matrice de gains personnalisée
+    /// Creates a new custom payoff matrix
     pub fn new(reward: i32, temptation: i32, sucker: i32, punishment: i32) -> Self {
         Self {
             reward,
@@ -48,7 +48,7 @@ impl PayoffMatrix {
         }
     }
 
-    /// Retourne la matrice classique d'Axelrod (R=3, T=5, S=0, P=1)
+    /// Returns Axelrod's classic matrix (R=3, T=5, S=0, P=1)
     pub fn classic() -> Self {
         Self {
             reward: REWARD,
@@ -58,8 +58,8 @@ impl PayoffMatrix {
         }
     }
 
-    /// Vérifie si la matrice respecte les conditions du Dilemme du Prisonnier
-    /// T > R > P > S et 2R > T + S
+    /// Checks if the matrix satisfies Prisoner's Dilemma conditions
+    /// T > R > P > S and 2R > T + S
     pub fn is_valid(&self) -> bool {
         self.temptation > self.reward
             && self.reward > self.punishment
@@ -67,8 +67,8 @@ impl PayoffMatrix {
             && 2 * self.reward > self.temptation + self.sucker
     }
 
-    /// Calcule les gains pour un round donné
-    /// Retourne (gain_joueur1, gain_joueur2)
+    /// Calculates payoffs for a given round
+    /// Returns (player1_payoff, player2_payoff)
     pub fn get_payoffs(&self, action1: Action, action2: Action) -> (i32, i32) {
         match (action1, action2) {
             (Action::Cooperate, Action::Cooperate) => (self.reward, self.reward),
@@ -78,12 +78,12 @@ impl PayoffMatrix {
         }
     }
 
-    /// Retourne le gain maximum possible en un round
+    /// Returns the maximum possible payoff in a single round
     pub fn max_per_round(&self) -> i32 {
         self.temptation
     }
 
-    /// Retourne le gain pour une coopération mutuelle parfaite sur n rounds
+    /// Returns the payoff for perfect mutual cooperation over n rounds
     pub fn perfect_cooperation_score(&self, rounds: u32) -> i32 {
         self.reward * rounds as i32
     }
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_invalid_matrix() {
-        // T < R viole la condition
+        // T < R violates the condition
         let invalid = PayoffMatrix::new(5, 3, 0, 1);
         assert!(!invalid.is_valid());
     }
@@ -141,12 +141,12 @@ mod tests {
     fn test_payoffs_mixed() {
         let matrix = PayoffMatrix::classic();
 
-        // Joueur 1 coopère, Joueur 2 trahit
+        // Player 1 cooperates, Player 2 defects
         let (p1, p2) = matrix.get_payoffs(Action::Cooperate, Action::Defect);
         assert_eq!(p1, 0); // S (sucker)
         assert_eq!(p2, 5); // T (temptation)
 
-        // Joueur 1 trahit, Joueur 2 coopère
+        // Player 1 defects, Player 2 cooperates
         let (p1, p2) = matrix.get_payoffs(Action::Defect, Action::Cooperate);
         assert_eq!(p1, 5); // T
         assert_eq!(p2, 0); // S
@@ -155,7 +155,7 @@ mod tests {
     #[test]
     fn test_perfect_cooperation_score() {
         let matrix = PayoffMatrix::classic();
-        // 200 rounds de coopération mutuelle = 200 * 3 = 600
+        // 200 rounds of mutual cooperation = 200 * 3 = 600
         assert_eq!(matrix.perfect_cooperation_score(200), 600);
     }
 }

@@ -1,31 +1,31 @@
-//! Module représentant un joueur dans le tournoi
+//! Module representing a player in the tournament
 
 use crate::history::History;
 use crate::strategy::{Strategy, StrategyType};
 
-/// Représente un joueur avec sa stratégie et son score
+/// Represents a player with their strategy and score
 #[derive(Debug)]
 pub struct Player {
-    /// Nom du joueur (généralement le nom de la stratégie)
+    /// Player name (usually the strategy name)
     pub name: String,
-    /// La stratégie utilisée par ce joueur
+    /// The strategy used by this player
     pub strategy: Box<dyn Strategy>,
-    /// Type de stratégie (pour clonage et affichage)
+    /// Strategy type (for cloning and display)
     pub strategy_type: StrategyType,
-    /// Score total accumulé
+    /// Total accumulated score
     pub score: i32,
-    /// Nombre de matchs joués
+    /// Number of matches played
     pub matches_played: u32,
-    /// Nombre de rounds joués
+    /// Number of rounds played
     pub rounds_played: u32,
-    /// Nombre de coopérations effectuées
+    /// Number of cooperations made
     pub cooperations: u32,
-    /// Nombre de trahisons effectuées
+    /// Number of defections made
     pub defections: u32,
 }
 
 impl Player {
-    /// Crée un nouveau joueur avec une stratégie donnée
+    /// Creates a new player with a given strategy
     pub fn new(strategy_type: StrategyType) -> Self {
         let strategy = strategy_type.create();
         Self {
@@ -40,7 +40,7 @@ impl Player {
         }
     }
 
-    /// Crée un joueur avec un nom personnalisé
+    /// Creates a player with a custom name
     pub fn with_name(name: String, strategy_type: StrategyType) -> Self {
         let strategy = strategy_type.create();
         Self {
@@ -55,17 +55,17 @@ impl Player {
         }
     }
 
-    /// Décide de l'action à jouer
+    /// Decides which action to play
     pub fn decide(&mut self, history: &History) -> crate::action::Action {
         self.strategy.decide(history)
     }
 
-    /// Ajoute des points au score
+    /// Adds points to the score
     pub fn add_score(&mut self, points: i32) {
         self.score += points;
     }
 
-    /// Enregistre un round joué
+    /// Records a played round
     pub fn record_round(&mut self, action: crate::action::Action) {
         self.rounds_played += 1;
         match action {
@@ -74,17 +74,17 @@ impl Player {
         }
     }
 
-    /// Enregistre un match terminé
+    /// Records a completed match
     pub fn record_match(&mut self) {
         self.matches_played += 1;
     }
 
-    /// Réinitialise la stratégie pour un nouveau match
+    /// Resets the strategy for a new match
     pub fn reset_strategy(&mut self) {
         self.strategy.reset();
     }
 
-    /// Réinitialise complètement le joueur (score, statistiques, stratégie)
+    /// Fully resets the player (score, statistics, strategy)
     pub fn reset(&mut self) {
         self.score = 0;
         self.matches_played = 0;
@@ -94,7 +94,7 @@ impl Player {
         self.strategy.reset();
     }
 
-    /// Retourne le taux de coopération (0.0 à 1.0)
+    /// Returns the cooperation rate (0.0 to 1.0)
     pub fn cooperation_rate(&self) -> f64 {
         if self.rounds_played == 0 {
             0.0
@@ -103,7 +103,7 @@ impl Player {
         }
     }
 
-    /// Retourne le score moyen par match
+    /// Returns the average score per match
     pub fn average_score_per_match(&self) -> f64 {
         if self.matches_played == 0 {
             0.0
@@ -112,7 +112,7 @@ impl Player {
         }
     }
 
-    /// Retourne le score moyen par round
+    /// Returns the average score per round
     pub fn average_score_per_round(&self) -> f64 {
         if self.rounds_played == 0 {
             0.0
@@ -121,12 +121,12 @@ impl Player {
         }
     }
 
-    /// Indique si la stratégie est "gentille"
+    /// Indicates if the strategy is "nice"
     pub fn is_nice(&self) -> bool {
         self.strategy.is_nice()
     }
 
-    /// Clone le joueur avec un nouvel état
+    /// Clones the player with a fresh state
     pub fn clone_fresh(&self) -> Self {
         Self::new(self.strategy_type)
     }

@@ -1,16 +1,16 @@
-//! Stratégie Tit for Tat (Œil pour œil) - par Anatol Rapoport
+//! Tit for Tat Strategy - by Anatol Rapoport
 //!
-//! Gagnante des deux tournois d'Axelrod (1980, 1984).
-//! - Coopère au premier tour
-//! - Ensuite, copie l'action précédente de l'adversaire
+//! Winner of both Axelrod tournaments (1980, 1984).
+//! - Cooperates on the first move
+//! - Then copies the opponent's previous action
 //!
-//! Caractéristiques: Gentille, Provocable, Pardonnante, Claire
+//! Characteristics: Nice, Provocable, Forgiving, Clear
 
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
 
-/// Stratégie Tit for Tat (œil pour œil)
+/// Tit for Tat strategy
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TitForTat;
 
@@ -20,12 +20,12 @@ impl Strategy for TitForTat {
     }
 
     fn description(&self) -> &'static str {
-        "Coopère d'abord, puis copie le dernier coup de l'adversaire (Rapoport)"
+        "Cooperates first, then copies opponent's last move (Rapoport)"
     }
 
     fn decide(&mut self, history: &History) -> Action {
-        // Premier tour: coopérer
-        // Ensuite: copier l'adversaire
+        // First round: cooperate
+        // Then: copy opponent
         history.last_opponent_action().unwrap_or(Action::Cooperate)
     }
 
@@ -54,15 +54,15 @@ mod tests {
         let mut strategy = TitForTat;
         let mut history = History::new();
 
-        // L'adversaire coopère -> on coopère
+        // Opponent cooperates -> we cooperate
         history.push(Action::Cooperate, Action::Cooperate);
         assert_eq!(strategy.decide(&history), Action::Cooperate);
 
-        // L'adversaire trahit -> on trahit
+        // Opponent defects -> we defect
         history.push(Action::Cooperate, Action::Defect);
         assert_eq!(strategy.decide(&history), Action::Defect);
 
-        // L'adversaire coopère à nouveau -> on pardonne
+        // Opponent cooperates again -> we forgive
         history.push(Action::Defect, Action::Cooperate);
         assert_eq!(strategy.decide(&history), Action::Cooperate);
     }

@@ -1,22 +1,22 @@
-//! Stratégie Prober (Sondeur)
+//! Prober Strategy
 //!
-//! Teste l'adversaire pour voir s'il est exploitable.
-//! - Tours 1-3: Joue D, C, C (séquence de sondage)
-//! - Si l'adversaire a coopéré aux tours 2 et 3: exploite (trahit toujours)
-//! - Sinon: joue Tit for Tat
+//! Tests the opponent to see if they are exploitable.
+//! - Rounds 1-3: Plays D, C, C (probe sequence)
+//! - If opponent cooperated on rounds 2 and 3: exploits (always defects)
+//! - Otherwise: plays Tit for Tat
 //!
-//! Stratégie "astucieuse" qui tente d'exploiter les adversaires trop gentils.
+//! A "clever" strategy that tries to exploit overly nice opponents.
 
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
 
-/// Stratégie Prober
+/// Prober strategy
 #[derive(Debug, Clone)]
 pub struct Prober {
-    /// Indique si l'adversaire est exploitable (coopère toujours)
+    /// Whether the opponent is exploitable (always cooperates)
     is_exploiting: bool,
-    /// Indique si la phase de sondage est terminée
+    /// Whether the probe phase is complete
     probe_complete: bool,
 }
 
@@ -41,19 +41,19 @@ impl Strategy for Prober {
     }
 
     fn description(&self) -> &'static str {
-        "Sonde avec D,C,C puis exploite si possible, sinon TFT"
+        "Probes with D,C,C then exploits if possible, otherwise TFT"
     }
 
     fn decide(&mut self, history: &History) -> Action {
         let round_num = history.len();
 
         match round_num {
-            0 => Action::Defect,    // Tour 1: Trahir (sonde)
-            1 => Action::Cooperate, // Tour 2: Coopérer
-            2 => Action::Cooperate, // Tour 3: Coopérer
+            0 => Action::Defect,    // Round 1: Defect (probe)
+            1 => Action::Cooperate, // Round 2: Cooperate
+            2 => Action::Cooperate, // Round 3: Cooperate
             3 => {
-                // Fin de la phase de sondage
-                // Vérifie si l'adversaire a coopéré aux tours 2 et 3
+                // End of probe phase
+                // Check if opponent cooperated on rounds 2 and 3
                 self.probe_complete = true;
                 if let (Some(r2), Some(r3)) = (history.get(1), history.get(2)) {
                     if r2.opponent_action == Action::Cooperate
@@ -66,15 +66,15 @@ impl Strategy for Prober {
                 if self.is_exploiting {
                     Action::Defect
                 } else {
-                    // TFT: copier le dernier coup
+                    // TFT: copy last move
                     history.last_opponent_action().unwrap_or(Action::Cooperate)
                 }
             }
             _ => {
                 if self.is_exploiting {
-                    Action::Defect // Exploite l'adversaire
+                    Action::Defect // Exploit the opponent
                 } else {
-                    // TFT standard
+                    // Standard TFT
                     history.last_opponent_action().unwrap_or(Action::Cooperate)
                 }
             }
@@ -87,7 +87,7 @@ impl Strategy for Prober {
     }
 
     fn is_nice(&self) -> bool {
-        false // Commence par trahir
+        false // Starts by defecting
     }
 
     fn clone_box(&self) -> Box<dyn Strategy> {
@@ -104,15 +104,15 @@ mod tests {
         let mut strategy = Prober::new();
         let mut history = History::new();
 
-        // Tour 1: Defect
+        // Round 1: Defect
         assert_eq!(strategy.decide(&history), Action::Defect);
         history.push(Action::Defect, Action::Cooperate);
 
-        // Tour 2: Cooperate
+        // Round 2: Cooperate
         assert_eq!(strategy.decide(&history), Action::Cooperate);
         history.push(Action::Cooperate, Action::Cooperate);
 
-        // Tour 3: Cooperate
+        // Round 3: Cooperate
         assert_eq!(strategy.decide(&history), Action::Cooperate);
     }
 
@@ -121,18 +121,18 @@ mod tests {
         let mut strategy = Prober::new();
         let mut history = History::new();
 
-        // Séquence de sondage contre Always Cooperate
+        // Probe sequence against Always Cooperate
         history.push(Action::Defect, Action::Cooperate);
         strategy.decide(&history);
         history.push(Action::Cooperate, Action::Cooperate);
         strategy.decide(&history);
         history.push(Action::Cooperate, Action::Cooperate);
 
-        // Tour 4: devrait exploiter (trahir)
+        // Round 4: should exploit (defect)
         assert_eq!(strategy.decide(&history), Action::Defect);
 
         history.push(Action::Defect, Action::Cooperate);
-        // Tour 5: continue d'exploiter
+        // Round 5: continues exploiting
         assert_eq!(strategy.decide(&history), Action::Defect);
     }
 
@@ -141,14 +141,14 @@ mod tests {
         let mut strategy = Prober::new();
         let mut history = History::new();
 
-        // L'adversaire riposte à la trahison initiale
+        // Opponent retaliates to initial defection
         history.push(Action::Defect, Action::Cooperate);
         strategy.decide(&history);
-        history.push(Action::Cooperate, Action::Defect); // Riposte!
+        history.push(Action::Cooperate, Action::Defect); // Retaliation!
         strategy.decide(&history);
         history.push(Action::Cooperate, Action::Cooperate);
 
-        // Tour 4: joue TFT (pas d'exploitation)
+        // Round 4: plays TFT (no exploitation)
         assert_eq!(strategy.decide(&history), Action::Cooperate);
     }
 

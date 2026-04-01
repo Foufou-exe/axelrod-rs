@@ -1,27 +1,27 @@
-//! Tournoi Écologique / Évolutionnaire
+//! Ecological / Evolutionary Tournament
 //!
-//! Simule l'évolution des populations de stratégies sur plusieurs générations.
-//! La prévalence de chaque stratégie à chaque génération est déterminée par
-//! son succès à la génération précédente.
+//! Simulates the evolution of strategy populations over multiple generations.
+//! The prevalence of each strategy at each generation is determined by
+//! its success in the previous generation.
 //!
-//! C'est ce type de tournoi qui a montré que les stratégies "gentilles"
-//! finissent par dominer dans les travaux d'Axelrod.
+//! This type of tournament showed that "nice" strategies
+//! eventually dominate in Axelrod's work.
 
 use crate::game::{Match, MatchConfig};
 use crate::player::Player;
 use crate::strategy::StrategyType;
 use std::collections::HashMap;
 
-/// Configuration du tournoi écologique
+/// Ecological tournament configuration
 #[derive(Debug, Clone)]
 pub struct EcologicalConfig {
-    /// Configuration des matchs
+    /// Match configuration
     pub match_config: MatchConfig,
-    /// Nombre de générations à simuler
+    /// Number of generations to simulate
     pub generations: u32,
-    /// Population initiale de chaque stratégie
+    /// Initial population of each strategy
     pub initial_population: u32,
-    /// Seuil minimum de population (en dessous, la stratégie est éliminée)
+    /// Minimum population threshold (below this, the strategy is eliminated)
     pub extinction_threshold: u32,
 }
 
@@ -50,24 +50,24 @@ impl EcologicalConfig {
     }
 }
 
-/// État d'une génération
+/// State of a generation
 #[derive(Debug, Clone)]
 pub struct Generation {
-    /// Numéro de la génération
+    /// Generation number
     pub number: u32,
-    /// Population de chaque stratégie
+    /// Population of each strategy
     pub populations: HashMap<StrategyType, u32>,
-    /// Score moyen de chaque stratégie cette génération
+    /// Average score of each strategy this generation
     pub average_scores: HashMap<StrategyType, f64>,
 }
 
 impl Generation {
-    /// Retourne la population totale
+    /// Returns the total population
     pub fn total_population(&self) -> u32 {
         self.populations.values().sum()
     }
 
-    /// Retourne les stratégies encore vivantes
+    /// Returns the strategies still alive
     pub fn alive_strategies(&self) -> Vec<StrategyType> {
         self.populations
             .iter()
@@ -76,7 +76,7 @@ impl Generation {
             .collect()
     }
 
-    /// Retourne la stratégie dominante
+    /// Returns the dominant strategy
     pub fn dominant_strategy(&self) -> Option<StrategyType> {
         self.populations
             .iter()
@@ -84,7 +84,7 @@ impl Generation {
             .map(|(&s, _)| s)
     }
 
-    /// Retourne le pourcentage de population pour chaque stratégie
+    /// Returns the population percentage for each strategy
     pub fn population_percentages(&self) -> HashMap<StrategyType, f64> {
         let total = self.total_population() as f64;
         if total == 0.0 {
@@ -97,16 +97,16 @@ impl Generation {
     }
 }
 
-/// Tournoi écologique / évolutionnaire
+/// Ecological / Evolutionary tournament
 pub struct EcologicalTournament {
     /// Configuration
     config: EcologicalConfig,
-    /// Stratégies participantes
+    /// Participating strategies
     strategies: Vec<StrategyType>,
 }
 
 impl EcologicalTournament {
-    /// Crée un nouveau tournoi avec toutes les stratégies
+    /// Creates a new tournament with all strategies
     pub fn new(config: EcologicalConfig) -> Self {
         Self {
             config,
@@ -114,16 +114,16 @@ impl EcologicalTournament {
         }
     }
 
-    /// Crée un tournoi avec des stratégies spécifiques
+    /// Creates a tournament with specific strategies
     pub fn with_strategies(strategies: Vec<StrategyType>, config: EcologicalConfig) -> Self {
         Self { config, strategies }
     }
 
-    /// Lance le tournoi et retourne l'historique des générations
+    /// Runs the tournament and returns the generation history
     pub fn run(&self) -> Vec<Generation> {
         let mut generations = Vec::with_capacity(self.config.generations as usize);
 
-        // Génération initiale
+        // Initial generation
         let mut populations: HashMap<StrategyType, u32> = self
             .strategies
             .iter()
@@ -137,12 +137,12 @@ impl EcologicalTournament {
         };
         generations.push(initial_gen);
 
-        // Simulation des générations
+        // Simulation of generations
         for gen_num in 1..=self.config.generations {
-            // Jouer les matchs et calculer les scores
+            // Play matches and calculate scores
             let scores = self.play_generation(&populations);
 
-            // Calculer les scores moyens
+            // Calculate average scores
             let total_population: u32 = populations.values().sum();
             if total_population == 0 {
                 break;
@@ -157,7 +157,7 @@ impl EcologicalTournament {
                 }
             }
 
-            // Calculer les nouvelles populations
+            // Calculate new populations
             let total_score: i64 = scores.values().map(|&s| s as i64).sum();
             if total_score <= 0 {
                 break;
@@ -177,10 +177,10 @@ impl EcologicalTournament {
                 }
             }
 
-            // Ajuster pour maintenir la population totale
+            // Adjust to maintain total population
             let current_total: u32 = new_populations.values().sum();
             if current_total > 0 && current_total != new_total_population {
-                // Trouver la stratégie avec le meilleur score et ajuster
+                // Find the strategy with the best score and adjust
                 if let Some(&best_strategy) = scores
                     .iter()
                     .filter(|&(&s, _)| *new_populations.get(&s).unwrap_or(&0) > 0)
@@ -203,7 +203,7 @@ impl EcologicalTournament {
             };
             generations.push(generation);
 
-            // Vérifier si une seule stratégie reste
+            // Check if only one strategy remains
             let alive: Vec<_> = populations.iter().filter(|&(_, &p)| p > 0).collect();
             if alive.len() <= 1 {
                 break;
@@ -213,7 +213,7 @@ impl EcologicalTournament {
         generations
     }
 
-    /// Joue tous les matchs d'une génération et retourne les scores totaux
+    /// Plays all matches of a generation and returns total scores
     fn play_generation(
         &self,
         populations: &HashMap<StrategyType, u32>,
@@ -221,14 +221,14 @@ impl EcologicalTournament {
         let mut scores: HashMap<StrategyType, i32> =
             self.strategies.iter().map(|&s| (s, 0)).collect();
 
-        // Liste des stratégies actives
+        // List of active strategies
         let active: Vec<_> = populations
             .iter()
             .filter(|&(_, &pop)| pop > 0)
             .map(|(&s, _)| s)
             .collect();
 
-        // Chaque stratégie joue contre toutes les autres
+        // Each strategy plays against all others
         for i in 0..active.len() {
             for j in i..active.len() {
                 let strategy_i = active[i];
@@ -241,7 +241,7 @@ impl EcologicalTournament {
                     continue;
                 }
 
-                // Jouer un match représentatif
+                // Play a representative match
                 let mut player1 = Player::new(strategy_i);
                 let mut player2 = Player::new(strategy_j);
 
@@ -251,18 +251,18 @@ impl EcologicalTournament {
                     game.play()
                 };
 
-                // Pondérer les scores par la population
-                // Nombre d'interactions proportionnel aux populations
+                // Weight scores by population
+                // Number of interactions proportional to populations
                 let interactions = if i == j {
-                    // Match contre soi-même: n*(n-1)/2 interactions
+                    // Self-match: n*(n-1)/2 interactions
                     (pop_i * (pop_i - 1)) / 2
                 } else {
-                    // Match contre autre: n*m interactions
+                    // Match against other: n*m interactions
                     pop_i * pop_j
                 };
 
                 if i == j {
-                    // Auto-match: les deux scores vont à la même stratégie
+                    // Self-match: both scores go to the same strategy
                     let entry = scores.entry(strategy_i).or_insert(0);
                     *entry += (result.score1 + result.score2) * interactions as i32 / 2;
                 } else {
@@ -278,20 +278,20 @@ impl EcologicalTournament {
         scores
     }
 
-    /// Affiche l'évolution des populations
+    /// Displays population evolution
     pub fn display_evolution(generations: &[Generation]) -> String {
         let mut output = String::new();
         output.push_str(
             "\n╔═══════════════════════════════════════════════════════════════════════════╗\n",
         );
         output.push_str(
-            "║                    ÉVOLUTION DES POPULATIONS                              ║\n",
+            "║                       POPULATION EVOLUTION                                ║\n",
         );
         output.push_str(
             "╠═══════════════════════════════════════════════════════════════════════════╣\n",
         );
 
-        // Afficher quelques générations clés
+        // Display some key generations
         let key_gens: Vec<usize> = if generations.len() <= 10 {
             (0..generations.len()).collect()
         } else {
@@ -307,7 +307,7 @@ impl EcologicalTournament {
                 continue;
             }
             let generation = &generations[gen_idx];
-            output.push_str(&format!("║ Génération {:>3}: ", generation.number));
+            output.push_str(&format!("║ Generation {:>3}: ", generation.number));
 
             let percentages = generation.population_percentages();
             let mut sorted: Vec<_> = percentages.iter().filter(|&(_, &p)| p > 0.5).collect();
@@ -326,21 +326,21 @@ impl EcologicalTournament {
             "╠═══════════════════════════════════════════════════════════════════════════╣\n",
         );
 
-        // Afficher le résultat final
+        // Display the final result
         if let Some(last_gen) = generations.last() {
             output.push_str(
-                "║ RÉSULTAT FINAL:                                                           ║\n",
+                "║ FINAL RESULT:                                                             ║\n",
             );
             if let Some(dominant) = last_gen.dominant_strategy() {
                 let pop_pct = last_gen.population_percentages();
                 let pct = pop_pct.get(&dominant).unwrap_or(&0.0);
                 output.push_str(&format!(
-                    "║   Stratégie dominante: {} ({:.1}% de la population)        \n",
+                    "║   Dominant strategy: {} ({:.1}% of population)            \n",
                     dominant, pct
                 ));
             }
             output.push_str(&format!(
-                "║   Stratégies survivantes: {}                                              \n",
+                "║   Surviving strategies: {}                                                \n",
                 last_gen.alive_strategies().len()
             ));
         }
@@ -372,10 +372,10 @@ mod tests {
 
         let generations = tournament.run();
 
-        // Au moins la génération initiale
+        // At least the initial generation
         assert!(!generations.is_empty());
 
-        // Génération 0 devrait avoir des populations égales
+        // Generation 0 should have equal populations
         let gen0 = &generations[0];
         assert_eq!(gen0.populations.get(&StrategyType::TitForTat), Some(&10));
         assert_eq!(gen0.populations.get(&StrategyType::AlwaysDefect), Some(&10));
@@ -401,10 +401,10 @@ mod tests {
 
         let generations = tournament.run();
 
-        // Le tournoi devrait produire plusieurs générations
+        // The tournament should produce multiple generations
         assert!(generations.len() > 1);
 
-        // La population totale devrait rester constante
+        // Total population should remain constant
         let initial_total = generations[0].total_population();
         for generation in &generations {
             assert_eq!(generation.total_population(), initial_total);

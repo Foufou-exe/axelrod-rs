@@ -1,10 +1,10 @@
-//! axelrod-rs - Simulateur de théorie des jeux évolutionnaire
+//! axelrod-rs - Evolutionary Game Theory Simulator
 //!
-//! Ce projet explore le Dilemme du Prisonnier Itéré en faisant s'affronter
-//! différentes stratégies automatisées pour observer l'émergence de la
-//! coopération, de la confiance et de la trahison dans un environnement compétitif.
+//! This project explores the Iterated Prisoner's Dilemma by pitting
+//! different automated strategies against each other to observe the emergence
+//! of cooperation, trust, and betrayal in a competitive environment.
 //!
-//! Inspiré par les travaux de Robert Axelrod dans "The Evolution of Cooperation" (1984).
+//! Inspired by Robert Axelrod's work in "The Evolution of Cooperation" (1984).
 
 pub mod action;
 pub mod game;

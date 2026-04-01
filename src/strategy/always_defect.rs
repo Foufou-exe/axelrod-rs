@@ -1,13 +1,13 @@
-//! Stratégie Always Defect (Trahison totale) - aussi appelée ALL D
+//! Always Defect Strategy - also called ALL D
 //!
-//! Trahit toujours, quoi que fasse l'adversaire.
-//! C'est la stratégie Nash-optimale pour un jeu unique, mais sous-optimale en itéré.
+//! Always defects, regardless of what the opponent does.
+//! This is the Nash-optimal strategy for a single game, but suboptimal in iterated play.
 
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
 
-/// Stratégie qui trahit toujours
+/// Strategy that always defects
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AlwaysDefect;
 
@@ -17,7 +17,7 @@ impl Strategy for AlwaysDefect {
     }
 
     fn description(&self) -> &'static str {
-        "Trahit toujours, peu importe les actions de l'adversaire (ALL D)"
+        "Always defects, regardless of opponent's actions (ALL D)"
     }
 
     fn decide(&mut self, _history: &History) -> Action {
@@ -42,14 +42,14 @@ mod tests {
         let mut strategy = AlwaysDefect;
         let mut history = History::new();
 
-        // Premier tour
+        // First round
         assert_eq!(strategy.decide(&history), Action::Defect);
 
-        // Après des coopérations de l'adversaire
+        // After opponent cooperations
         history.push(Action::Defect, Action::Cooperate);
         assert_eq!(strategy.decide(&history), Action::Defect);
 
-        // Après des trahisons de l'adversaire
+        // After opponent defections
         history.push(Action::Defect, Action::Defect);
         assert_eq!(strategy.decide(&history), Action::Defect);
     }

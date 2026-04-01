@@ -1,68 +1,68 @@
-//! Tournoi Round-Robin
+//! Round-Robin Tournament
 //!
-//! Chaque stratégie joue contre toutes les autres (et contre elle-même).
-//! C'est le format utilisé par Axelrod dans ses tournois originaux.
+//! Each strategy plays against all others (and against itself).
+//! This is the format used by Axelrod in his original tournaments.
 
 use crate::game::{Match, MatchConfig, MatchResult};
 use crate::player::Player;
 use crate::strategy::StrategyType;
 use std::collections::HashMap;
 
-/// Score d'un joueur dans le tournoi
+/// Player score in the tournament
 #[derive(Debug, Clone)]
 pub struct PlayerScore {
-    /// Nom de la stratégie
+    /// Strategy name
     pub name: String,
-    /// Type de stratégie
+    /// Strategy type
     pub strategy_type: StrategyType,
-    /// Score total
+    /// Total score
     pub total_score: i32,
-    /// Nombre de matchs joués
+    /// Number of matches played
     pub matches_played: u32,
-    /// Score moyen par match
+    /// Average score per match
     pub average_score: f64,
-    /// Taux de coopération
+    /// Cooperation rate
     pub cooperation_rate: f64,
-    /// Est-ce une stratégie "gentille"?
+    /// Is this a "nice" strategy?
     pub is_nice: bool,
 }
 
-/// Résultat complet du tournoi
+/// Complete tournament result
 #[derive(Debug)]
 pub struct TournamentResult {
-    /// Classement des joueurs (du meilleur au moins bon)
+    /// Player rankings (from best to worst)
     pub rankings: Vec<PlayerScore>,
-    /// Tous les résultats de matchs
+    /// All match results
     pub match_results: Vec<MatchResult>,
-    /// Matrice des scores (stratégie i vs stratégie j)
+    /// Score matrix (strategy i vs strategy j)
     pub score_matrix: HashMap<(StrategyType, StrategyType), (i32, i32)>,
 }
 
 impl TournamentResult {
-    /// Retourne le gagnant du tournoi
+    /// Returns the tournament winner
     pub fn winner(&self) -> Option<&PlayerScore> {
         self.rankings.first()
     }
 
-    /// Affiche le classement formaté
+    /// Displays the formatted rankings
     pub fn display_rankings(&self) -> String {
         let mut output = String::new();
         output.push_str(
             "\n╔═══════════════════════════════════════════════════════════════════════╗\n",
         );
         output.push_str(
-            "║                      RÉSULTATS DU TOURNOI                             ║\n",
+            "║                      TOURNAMENT RESULTS                               ║\n",
         );
         output.push_str(
             "╠═══════════════════════════════════════════════════════════════════════╣\n",
         );
         output
-            .push_str("║ Rang │ Stratégie                │ Score  │ Moy/Match │ Coop%  │ Nice ║\n");
+            .push_str("║ Rank │ Strategy                 │ Score  │ Avg/Match │ Coop%  │ Nice ║\n");
         output
             .push_str("╠══════╪══════════════════════════╪════════╪═══════════╪════════╪══════╣\n");
 
         for (i, player) in self.rankings.iter().enumerate() {
-            let nice_str = if player.is_nice { "Oui" } else { "Non" };
+            let nice_str = if player.is_nice { "Yes" } else { "No" };
             output.push_str(&format!(
                 "║ {:>4} │ {:<24} │ {:>6} │ {:>9.1} │ {:>5.1}% │ {:>4} ║\n",
                 i + 1,
@@ -81,7 +81,7 @@ impl TournamentResult {
     }
 }
 
-/// Tronque une chaîne à une longueur maximale
+/// Truncates a string to a maximum length
 fn truncate_str(s: &str, max_len: usize) -> String {
     if s.len() <= max_len {
         s.to_string()
@@ -90,16 +90,16 @@ fn truncate_str(s: &str, max_len: usize) -> String {
     }
 }
 
-/// Tournoi Round-Robin
+/// Round-Robin Tournament
 pub struct RoundRobinTournament {
-    /// Configuration des matchs
+    /// Match configuration
     config: MatchConfig,
-    /// Stratégies participant au tournoi
+    /// Strategies participating in the tournament
     strategies: Vec<StrategyType>,
 }
 
 impl RoundRobinTournament {
-    /// Crée un nouveau tournoi avec toutes les stratégies
+    /// Creates a new tournament with all strategies
     pub fn new(config: MatchConfig) -> Self {
         Self {
             config,
@@ -107,17 +107,17 @@ impl RoundRobinTournament {
         }
     }
 
-    /// Crée un tournoi avec des stratégies spécifiques
+    /// Creates a tournament with specific strategies
     pub fn with_strategies(strategies: Vec<StrategyType>, config: MatchConfig) -> Self {
         Self { config, strategies }
     }
 
-    /// Crée un tournoi avec la configuration par défaut
+    /// Creates a tournament with default configuration
     pub fn default() -> Self {
         Self::new(MatchConfig::default())
     }
 
-    /// Lance le tournoi et retourne les résultats
+    /// Runs the tournament and returns the results
     pub fn run(&self) -> TournamentResult {
         let n = self.strategies.len();
         let mut players: Vec<Player> = self.strategies.iter().map(|s| Player::new(*s)).collect();
@@ -125,10 +125,10 @@ impl RoundRobinTournament {
         let mut match_results = Vec::new();
         let mut score_matrix: HashMap<(StrategyType, StrategyType), (i32, i32)> = HashMap::new();
 
-        // Chaque stratégie joue contre toutes les autres (y compris elle-même)
+        // Each strategy plays against all others (including itself)
         for i in 0..n {
             for j in i..n {
-                // Clone les joueurs pour ce match
+                // Clone players for this match
                 let mut player1 = players[i].clone_fresh();
                 let mut player2 = players[j].clone_fresh();
 
@@ -137,27 +137,27 @@ impl RoundRobinTournament {
                     game.play()
                 };
 
-                // Mise à jour des scores totaux
+                // Update total scores
                 players[i].add_score(result.score1);
                 players[i].cooperations += result.cooperations1;
                 players[i].rounds_played += result.rounds.len() as u32;
                 players[i].matches_played += 1;
 
                 if i != j {
-                    // Match contre un adversaire différent
+                    // Match against a different opponent
                     players[j].add_score(result.score2);
                     players[j].cooperations += result.cooperations2;
                     players[j].rounds_played += result.rounds.len() as u32;
                     players[j].matches_played += 1;
 
-                    // Enregistrer aussi le match inverse dans la matrice
+                    // Also record the reverse match in the matrix
                     score_matrix.insert(
                         (self.strategies[j], self.strategies[i]),
                         (result.score2, result.score1),
                     );
                 }
 
-                // Enregistrer dans la matrice des scores
+                // Record in the score matrix
                 score_matrix.insert(
                     (self.strategies[i], self.strategies[j]),
                     (result.score1, result.score2),
@@ -167,7 +167,7 @@ impl RoundRobinTournament {
             }
         }
 
-        // Création du classement
+        // Create rankings
         let mut rankings: Vec<PlayerScore> = players
             .iter()
             .map(|p| PlayerScore {
@@ -181,7 +181,7 @@ impl RoundRobinTournament {
             })
             .collect();
 
-        // Tri par score décroissant
+        // Sort by descending score
         rankings.sort_by(|a, b| b.total_score.cmp(&a.total_score));
 
         TournamentResult {
@@ -205,7 +205,7 @@ mod tests {
 
         let result = tournament.run();
 
-        // Always Defect devrait gagner contre Always Cooperate
+        // Always Defect should win against Always Cooperate
         assert_eq!(result.rankings.len(), 2);
         assert_eq!(result.rankings[0].strategy_type, StrategyType::AlwaysDefect);
     }
@@ -215,7 +215,7 @@ mod tests {
         let tournament = RoundRobinTournament::new(MatchConfig::with_rounds(10));
         let result = tournament.run();
 
-        // Toutes les stratégies devraient être présentes
+        // All strategies should be present
         assert_eq!(result.rankings.len(), StrategyType::all().len());
     }
 
@@ -233,9 +233,9 @@ mod tests {
 
         let result = tournament.run();
 
-        // Les stratégies "nice" (TFT, AC, Grudger) devraient généralement
-        // avoir un bon score moyen car elles coopèrent entre elles
-        // Vérifions que TFT ou Grudger est dans le top 2
+        // "Nice" strategies (TFT, AC, Grudger) should generally
+        // have a good average score because they cooperate with each other
+        // Let's verify that TFT or Grudger is in the top 2
         let top_2_types: Vec<_> = result.rankings[..2]
             .iter()
             .map(|r| r.strategy_type)

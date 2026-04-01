@@ -1,23 +1,23 @@
-//! Gestion d'un match complet entre deux joueurs
+//! Management of a complete match between two players
 //!
-//! Un match consiste en plusieurs rounds (par défaut 200, comme les tournois d'Axelrod).
+//! A match consists of multiple rounds (default 200, as in Axelrod's tournaments).
 
 use crate::action::Action;
 use crate::history::History;
 use crate::payoff::PayoffMatrix;
 use crate::player::Player;
 
-/// Configuration d'un match
+/// Match configuration
 #[derive(Debug, Clone)]
 pub struct MatchConfig {
-    /// Nombre de rounds par match
+    /// Number of rounds per match
     pub rounds: u32,
-    /// Matrice de gains à utiliser
+    /// Payoff matrix to use
     pub payoff_matrix: PayoffMatrix,
 }
 
 impl MatchConfig {
-    /// Configuration par défaut (200 rounds, matrice classique)
+    /// Default configuration (200 rounds, classic matrix)
     pub fn default() -> Self {
         Self {
             rounds: 200,
@@ -25,7 +25,7 @@ impl MatchConfig {
         }
     }
 
-    /// Configuration personnalisée
+    /// Custom configuration
     pub fn new(rounds: u32, payoff_matrix: PayoffMatrix) -> Self {
         Self {
             rounds,
@@ -33,7 +33,7 @@ impl MatchConfig {
         }
     }
 
-    /// Configuration avec un nombre de rounds personnalisé
+    /// Configuration with a custom number of rounds
     pub fn with_rounds(rounds: u32) -> Self {
         Self {
             rounds,
@@ -42,40 +42,40 @@ impl MatchConfig {
     }
 }
 
-/// Résultat d'un round
+/// Result of a round
 #[derive(Debug, Clone)]
 pub struct RoundResult {
-    /// Action du joueur 1
+    /// Action of player 1
     pub action1: Action,
-    /// Action du joueur 2
+    /// Action of player 2
     pub action2: Action,
-    /// Points gagnés par le joueur 1
+    /// Points earned by player 1
     pub score1: i32,
-    /// Points gagnés par le joueur 2
+    /// Points earned by player 2
     pub score2: i32,
 }
 
-/// Résultat complet d'un match
+/// Complete result of a match
 #[derive(Debug, Clone)]
 pub struct MatchResult {
-    /// Nom du joueur 1
+    /// Name of player 1
     pub player1_name: String,
-    /// Nom du joueur 2
+    /// Name of player 2
     pub player2_name: String,
-    /// Score final du joueur 1
+    /// Final score of player 1
     pub score1: i32,
-    /// Score final du joueur 2
+    /// Final score of player 2
     pub score2: i32,
-    /// Nombre de coopérations du joueur 1
+    /// Number of cooperations by player 1
     pub cooperations1: u32,
-    /// Nombre de coopérations du joueur 2
+    /// Number of cooperations by player 2
     pub cooperations2: u32,
-    /// Historique de tous les rounds
+    /// History of all rounds
     pub rounds: Vec<RoundResult>,
 }
 
 impl MatchResult {
-    /// Retourne le gagnant (None si égalité)
+    /// Returns the winner (None if tie)
     pub fn winner(&self) -> Option<&str> {
         if self.score1 > self.score2 {
             Some(&self.player1_name)
@@ -86,7 +86,7 @@ impl MatchResult {
         }
     }
 
-    /// Retourne le taux de coopération du joueur 1
+    /// Returns the cooperation rate of player 1
     pub fn cooperation_rate1(&self) -> f64 {
         if self.rounds.is_empty() {
             0.0
@@ -95,7 +95,7 @@ impl MatchResult {
         }
     }
 
-    /// Retourne le taux de coopération du joueur 2
+    /// Returns the cooperation rate of player 2
     pub fn cooperation_rate2(&self) -> f64 {
         if self.rounds.is_empty() {
             0.0
@@ -104,7 +104,7 @@ impl MatchResult {
         }
     }
 
-    /// Retourne le taux de coopération mutuelle
+    /// Returns the mutual cooperation rate
     pub fn mutual_cooperation_rate(&self) -> f64 {
         if self.rounds.is_empty() {
             0.0
@@ -119,18 +119,18 @@ impl MatchResult {
     }
 }
 
-/// Représente un match entre deux joueurs
+/// Represents a match between two players
 pub struct Match<'a> {
-    /// Joueur 1
+    /// Player 1
     player1: &'a mut Player,
-    /// Joueur 2
+    /// Player 2
     player2: &'a mut Player,
-    /// Configuration du match
+    /// Match configuration
     config: MatchConfig,
 }
 
 impl<'a> Match<'a> {
-    /// Crée un nouveau match
+    /// Creates a new match
     pub fn new(player1: &'a mut Player, player2: &'a mut Player, config: MatchConfig) -> Self {
         Self {
             player1,
@@ -139,18 +139,18 @@ impl<'a> Match<'a> {
         }
     }
 
-    /// Crée un match avec la configuration par défaut
+    /// Creates a match with default configuration
     pub fn with_defaults(player1: &'a mut Player, player2: &'a mut Player) -> Self {
         Self::new(player1, player2, MatchConfig::default())
     }
 
-    /// Joue le match et retourne le résultat
+    /// Plays the match and returns the result
     pub fn play(&mut self) -> MatchResult {
-        // Réinitialise les stratégies pour un nouveau match
+        // Reset strategies for a new match
         self.player1.reset_strategy();
         self.player2.reset_strategy();
 
-        // Historiques du point de vue de chaque joueur
+        // Histories from each player's perspective
         let mut history1 = History::with_capacity(self.config.rounds as usize);
         let mut history2 = History::with_capacity(self.config.rounds as usize);
 
@@ -161,18 +161,18 @@ impl<'a> Match<'a> {
         let mut rounds = Vec::with_capacity(self.config.rounds as usize);
 
         for _ in 0..self.config.rounds {
-            // Chaque joueur décide de son action
+            // Each player decides their action
             let action1 = self.player1.decide(&history1);
             let action2 = self.player2.decide(&history2);
 
-            // Calcul des gains
+            // Calculate payoffs
             let (score1, score2) = self.config.payoff_matrix.get_payoffs(action1, action2);
 
-            // Mise à jour des scores
+            // Update scores
             total_score1 += score1;
             total_score2 += score2;
 
-            // Comptage des coopérations
+            // Count cooperations
             if action1 == Action::Cooperate {
                 cooperations1 += 1;
             }
@@ -180,17 +180,17 @@ impl<'a> Match<'a> {
                 cooperations2 += 1;
             }
 
-            // Enregistrement des statistiques des joueurs
+            // Record player statistics
             self.player1.add_score(score1);
             self.player1.record_round(action1);
             self.player2.add_score(score2);
             self.player2.record_round(action2);
 
-            // Mise à jour des historiques
+            // Update histories
             history1.push(action1, action2);
             history2.push(action2, action1);
 
-            // Enregistrement du round
+            // Record the round
             rounds.push(RoundResult {
                 action1,
                 action2,
@@ -199,7 +199,7 @@ impl<'a> Match<'a> {
             });
         }
 
-        // Enregistrement des matchs
+        // Record matches
         self.player1.record_match();
         self.player2.record_match();
 
@@ -235,7 +235,7 @@ mod tests {
         let mut game = Match::new(&mut player1, &mut player2, config);
         let result = game.play();
 
-        // 10 rounds de coopération mutuelle: 10 * 3 = 30 chacun
+        // 10 rounds of mutual cooperation: 10 * 3 = 30 each
         assert_eq!(result.score1, 30);
         assert_eq!(result.score2, 30);
         assert_eq!(result.cooperations1, 10);
@@ -251,7 +251,7 @@ mod tests {
         let mut game = Match::new(&mut player1, &mut player2, config);
         let result = game.play();
 
-        // 10 rounds: Coop gagne S=0, Defect gagne T=5
+        // 10 rounds: Coop gets S=0, Defect gets T=5
         assert_eq!(result.score1, 0); // 10 * 0
         assert_eq!(result.score2, 50); // 10 * 5
         assert_eq!(result.winner(), Some("Always Defect"));
@@ -266,7 +266,7 @@ mod tests {
         let mut game = Match::new(&mut player1, &mut player2, config);
         let result = game.play();
 
-        // TFT coopère toujours avec un coopérateur
+        // TFT always cooperates with a cooperator
         assert_eq!(result.score1, 30);
         assert_eq!(result.score2, 30);
     }
@@ -280,8 +280,8 @@ mod tests {
         let mut game = Match::new(&mut player1, &mut player2, config);
         let result = game.play();
 
-        // Round 1: TFT coopère (score S=0), Defect trahit (score T=5)
-        // Rounds 2-10: TFT trahit, Defect trahit (P=1 chacun)
+        // Round 1: TFT cooperates (score S=0), Defect defects (score T=5)
+        // Rounds 2-10: TFT defects, Defect defects (P=1 each)
         // TFT: 0 + 9*1 = 9
         // Defect: 5 + 9*1 = 14
         assert_eq!(result.score1, 9);
@@ -297,7 +297,7 @@ mod tests {
         let mut game = Match::new(&mut player1, &mut player2, config);
         let result = game.play();
 
-        // Deux TFT coopèrent toujours ensemble
+        // Two TFTs always cooperate together
         assert!((result.mutual_cooperation_rate() - 1.0).abs() < 0.001);
     }
 }

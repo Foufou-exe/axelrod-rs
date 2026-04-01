@@ -1,7 +1,7 @@
-//! Module des stratégies pour le Dilemme du Prisonnier Itéré
+//! Strategies module for the Iterated Prisoner's Dilemma
 //!
-//! Ce module contient le trait `Strategy` et toutes les implémentations
-//! des stratégies classiques des tournois d'Axelrod (1980-1984).
+//! This module contains the `Strategy` trait and all implementations
+//! of classic strategies from Axelrod's tournaments (1980-1984).
 
 mod always_cooperate;
 mod always_defect;
@@ -31,26 +31,26 @@ use crate::action::Action;
 use crate::history::History;
 use std::fmt::Debug;
 
-/// Trait définissant une stratégie pour le Dilemme du Prisonnier
+/// Trait defining a strategy for the Prisoner's Dilemma
 pub trait Strategy: Debug + Send + Sync {
-    /// Retourne le nom de la stratégie
+    /// Returns the strategy name
     fn name(&self) -> &'static str;
 
-    /// Retourne une description courte de la stratégie
+    /// Returns a short description of the strategy
     fn description(&self) -> &'static str;
 
-    /// Décide de l'action à jouer en fonction de l'historique
+    /// Decides which action to play based on the history
     fn decide(&mut self, history: &History) -> Action;
 
-    /// Réinitialise l'état interne de la stratégie (pour un nouveau match)
+    /// Resets the strategy's internal state (for a new match)
     fn reset(&mut self) {}
 
-    /// Indique si la stratégie est "gentille" (ne trahit jamais en premier)
+    /// Indicates if the strategy is "nice" (never defects first)
     fn is_nice(&self) -> bool {
         false
     }
 
-    /// Crée un clone boxé de la stratégie
+    /// Creates a boxed clone of the strategy
     fn clone_box(&self) -> Box<dyn Strategy>;
 }
 
@@ -60,7 +60,7 @@ impl Clone for Box<dyn Strategy> {
     }
 }
 
-/// Énumération de toutes les stratégies disponibles
+/// Enumeration of all available strategies
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum StrategyType {
     AlwaysCooperate,
@@ -78,7 +78,7 @@ pub enum StrategyType {
 }
 
 impl StrategyType {
-    /// Retourne toutes les stratégies disponibles
+    /// Returns all available strategies
     pub fn all() -> Vec<StrategyType> {
         vec![
             StrategyType::AlwaysCooperate,
@@ -96,7 +96,7 @@ impl StrategyType {
         ]
     }
 
-    /// Crée une instance de la stratégie
+    /// Creates an instance of the strategy
     pub fn create(&self) -> Box<dyn Strategy> {
         match self {
             StrategyType::AlwaysCooperate => Box::new(AlwaysCooperate),
@@ -114,7 +114,7 @@ impl StrategyType {
         }
     }
 
-    /// Retourne le nom de la stratégie
+    /// Returns the strategy name
     pub fn name(&self) -> &'static str {
         match self {
             StrategyType::AlwaysCooperate => "Always Cooperate",

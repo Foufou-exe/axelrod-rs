@@ -1,4 +1,4 @@
-//! Module de jeu - gestion des matchs et rounds
+//! Game module - match and round management
 
 mod game_match;
 

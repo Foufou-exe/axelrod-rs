@@ -1,18 +1,18 @@
-//! Stratégie Grudger (Rancunier) - aussi appelée Grim Trigger ou Friedman
+//! Grudger Strategy - also called Grim Trigger or Friedman
 //!
-//! - Coopère jusqu'à ce que l'adversaire trahisse
-//! - Une fois trahi, trahit pour TOUJOURS
+//! - Cooperates until the opponent defects
+//! - Once betrayed, defects FOREVER
 //!
-//! Gentille mais impitoyable. Ne pardonne jamais.
+//! Nice but unforgiving. Never forgives.
 
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
 
-/// Stratégie Grudger (Rancunier)
+/// Grudger strategy
 #[derive(Debug, Clone)]
 pub struct Grudger {
-    /// Si l'adversaire a déjà trahi
+    /// Whether the opponent has ever defected
     has_been_betrayed: bool,
 }
 
@@ -36,11 +36,11 @@ impl Strategy for Grudger {
     }
 
     fn description(&self) -> &'static str {
-        "Coopère jusqu'à une trahison, puis trahit pour toujours (Grim Trigger)"
+        "Cooperates until betrayed, then defects forever (Grim Trigger)"
     }
 
     fn decide(&mut self, history: &History) -> Action {
-        // Vérifie si l'adversaire a trahi dans l'historique
+        // Check if opponent has defected in history
         if !self.has_been_betrayed && history.opponent_has_defected() {
             self.has_been_betrayed = true;
         }
@@ -92,15 +92,15 @@ mod tests {
         let mut strategy = Grudger::new();
         let mut history = History::new();
 
-        // Coopère d'abord
+        // Cooperates first
         history.push(Action::Cooperate, Action::Cooperate);
         assert_eq!(strategy.decide(&history), Action::Cooperate);
 
-        // L'adversaire trahit
+        // Opponent defects
         history.push(Action::Cooperate, Action::Defect);
         assert_eq!(strategy.decide(&history), Action::Defect);
 
-        // Trahit pour toujours, même si l'adversaire coopère à nouveau
+        // Defects forever, even if opponent cooperates again
         history.push(Action::Defect, Action::Cooperate);
         assert_eq!(strategy.decide(&history), Action::Defect);
 

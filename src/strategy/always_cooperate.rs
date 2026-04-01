@@ -1,13 +1,13 @@
-//! Stratégie Always Cooperate (Coopération totale)
+//! Always Cooperate Strategy
 //!
-//! Coopère toujours, quoi que fasse l'adversaire.
-//! C'est une stratégie "gentille" mais facilement exploitable.
+//! Always cooperates, regardless of what the opponent does.
+//! This is a "nice" strategy but easily exploitable.
 
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
 
-/// Stratégie qui coopère toujours
+/// Strategy that always cooperates
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AlwaysCooperate;
 
@@ -17,7 +17,7 @@ impl Strategy for AlwaysCooperate {
     }
 
     fn description(&self) -> &'static str {
-        "Coopère toujours, peu importe les actions de l'adversaire"
+        "Always cooperates, regardless of opponent's actions"
     }
 
     fn decide(&mut self, _history: &History) -> Action {
@@ -42,14 +42,14 @@ mod tests {
         let mut strategy = AlwaysCooperate;
         let mut history = History::new();
 
-        // Premier tour
+        // First round
         assert_eq!(strategy.decide(&history), Action::Cooperate);
 
-        // Après des coopérations
+        // After cooperations
         history.push(Action::Cooperate, Action::Cooperate);
         assert_eq!(strategy.decide(&history), Action::Cooperate);
 
-        // Après des trahisons de l'adversaire
+        // After opponent defections
         history.push(Action::Cooperate, Action::Defect);
         assert_eq!(strategy.decide(&history), Action::Cooperate);
     }

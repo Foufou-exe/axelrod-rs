@@ -1,20 +1,20 @@
-//! Actions possibles dans le Dilemme du Prisonnier
+//! Possible actions in the Prisoner's Dilemma
 //!
-//! Chaque joueur peut soit coopérer, soit trahir (défection).
+//! Each player can either cooperate or defect.
 
 use std::fmt;
 
-/// Représente une action dans le Dilemme du Prisonnier
+/// Represents an action in the Prisoner's Dilemma
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Action {
-    /// Coopérer avec l'autre joueur
+    /// Cooperate with the other player
     Cooperate,
-    /// Trahir l'autre joueur (défection)
+    /// Defect against the other player
     Defect,
 }
 
 impl Action {
-    /// Retourne l'action opposée
+    /// Returns the opposite action
     pub fn opposite(&self) -> Action {
         match self {
             Action::Cooperate => Action::Defect,
@@ -22,12 +22,12 @@ impl Action {
         }
     }
 
-    /// Vérifie si l'action est une coopération
+    /// Checks if the action is cooperation
     pub fn is_cooperate(&self) -> bool {
         matches!(self, Action::Cooperate)
     }
 
-    /// Vérifie si l'action est une trahison
+    /// Checks if the action is defection
     pub fn is_defect(&self) -> bool {
         matches!(self, Action::Defect)
     }

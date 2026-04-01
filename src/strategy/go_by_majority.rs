@@ -1,17 +1,17 @@
-//! Stratégies Go By Majority (Jouer la majorité)
+//! Go By Majority Strategies
 //!
-//! Ces stratégies jouent l'action que l'adversaire a le plus jouée.
-//! - Hard Go By Majority: commence par trahir
-//! - Soft Go By Majority: commence par coopérer
+//! These strategies play the action that the opponent has played most often.
+//! - Hard Go By Majority: starts by defecting
+//! - Soft Go By Majority: starts by cooperating
 //!
-//! En cas d'égalité, joue l'action par défaut.
+//! In case of a tie, plays the default action.
 
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
 
-/// Stratégie Hard Go By Majority
-/// Commence par trahir, puis joue la majorité des coups adverses
+/// Hard Go By Majority strategy
+/// Starts by defecting, then plays the majority of opponent's moves
 #[derive(Debug, Clone, Copy, Default)]
 pub struct HardGoByMajority;
 
@@ -21,7 +21,7 @@ impl Strategy for HardGoByMajority {
     }
 
     fn description(&self) -> &'static str {
-        "Joue l'action majoritaire de l'adversaire, commence par trahir"
+        "Plays opponent's majority action, starts by defecting"
     }
 
     fn decide(&mut self, history: &History) -> Action {
@@ -35,7 +35,7 @@ impl Strategy for HardGoByMajority {
         if cooperations > defections {
             Action::Cooperate
         } else {
-            // En cas d'égalité ou plus de trahisons: trahir
+            // In case of tie or more defections: defect
             Action::Defect
         }
     }
@@ -49,8 +49,8 @@ impl Strategy for HardGoByMajority {
     }
 }
 
-/// Stratégie Soft Go By Majority
-/// Commence par coopérer, puis joue la majorité des coups adverses
+/// Soft Go By Majority strategy
+/// Starts by cooperating, then plays the majority of opponent's moves
 #[derive(Debug, Clone, Copy, Default)]
 pub struct SoftGoByMajority;
 
@@ -60,7 +60,7 @@ impl Strategy for SoftGoByMajority {
     }
 
     fn description(&self) -> &'static str {
-        "Joue l'action majoritaire de l'adversaire, commence par coopérer"
+        "Plays opponent's majority action, starts by cooperating"
     }
 
     fn decide(&mut self, history: &History) -> Action {
@@ -74,7 +74,7 @@ impl Strategy for SoftGoByMajority {
         if defections > cooperations {
             Action::Defect
         } else {
-            // En cas d'égalité ou plus de coopérations: coopérer
+            // In case of tie or more cooperations: cooperate
             Action::Cooperate
         }
     }
@@ -107,13 +107,13 @@ mod tests {
             let mut strategy = HardGoByMajority;
             let mut history = History::new();
 
-            // 2 coopérations, 1 trahison -> coopère
+            // 2 cooperations, 1 defection -> cooperates
             history.push(Action::Defect, Action::Cooperate);
             history.push(Action::Cooperate, Action::Cooperate);
             history.push(Action::Cooperate, Action::Defect);
             assert_eq!(strategy.decide(&history), Action::Cooperate);
 
-            // Ajoute une trahison -> égalité -> trahit
+            // Add a defection -> tie -> defects
             history.push(Action::Cooperate, Action::Defect);
             assert_eq!(strategy.decide(&history), Action::Defect);
         }
@@ -139,13 +139,13 @@ mod tests {
             let mut strategy = SoftGoByMajority;
             let mut history = History::new();
 
-            // 1 coopération, 2 trahisons -> trahit
+            // 1 cooperation, 2 defections -> defects
             history.push(Action::Cooperate, Action::Cooperate);
             history.push(Action::Cooperate, Action::Defect);
             history.push(Action::Defect, Action::Defect);
             assert_eq!(strategy.decide(&history), Action::Defect);
 
-            // Ajoute une coopération -> égalité -> coopère
+            // Add a cooperation -> tie -> cooperates
             history.push(Action::Defect, Action::Cooperate);
             assert_eq!(strategy.decide(&history), Action::Cooperate);
         }

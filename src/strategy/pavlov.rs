@@ -1,16 +1,16 @@
-//! Stratégie Pavlov (Win-Stay, Lose-Shift)
+//! Pavlov Strategy (Win-Stay, Lose-Shift)
 //!
-//! Aussi appelée "Win-Stay, Lose-Switch" ou "Simpleton".
-//! - Si le dernier résultat était "bon" (R ou T), répète l'action
-//! - Si le dernier résultat était "mauvais" (S ou P), change d'action
+//! Also called "Win-Stay, Lose-Switch" or "Simpleton".
+//! - If the last outcome was "good" (R or T), repeat the action
+//! - If the last outcome was "bad" (S or P), switch action
 //!
-//! Découverte par Nowak & Sigmund (1992) comme plus robuste que TFT face au bruit.
+//! Discovered by Nowak & Sigmund (1992) as more robust than TFT against noise.
 
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
 
-/// Stratégie Pavlov (Win-Stay, Lose-Shift)
+/// Pavlov strategy (Win-Stay, Lose-Shift)
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Pavlov;
 
@@ -20,17 +20,17 @@ impl Strategy for Pavlov {
     }
 
     fn description(&self) -> &'static str {
-        "Win-Stay, Lose-Shift: répète si bon résultat (R/T), change sinon"
+        "Win-Stay, Lose-Shift: repeats if good outcome (R/T), switches otherwise"
     }
 
     fn decide(&mut self, history: &History) -> Action {
         match history.last() {
-            None => Action::Cooperate, // Premier tour: coopérer
+            None => Action::Cooperate, // First round: cooperate
             Some(round) => {
-                // Bon résultat = on a coopéré et l'autre aussi (R)
-                //              OU on a trahi et l'autre a coopéré (T)
-                // Mauvais résultat = on a coopéré et l'autre a trahi (S)
-                //                  OU on a trahi et l'autre aussi (P)
+                // Good outcome = we cooperated and they did too (R)
+                //              OR we defected and they cooperated (T)
+                // Bad outcome = we cooperated and they defected (S)
+                //             OR we defected and they did too (P)
 
                 let good_outcome = matches!(
                     (round.my_action, round.opponent_action),
@@ -38,10 +38,10 @@ impl Strategy for Pavlov {
                 );
 
                 if good_outcome {
-                    // Win-Stay: répéter la dernière action
+                    // Win-Stay: repeat last action
                     round.my_action
                 } else {
-                    // Lose-Shift: changer d'action
+                    // Lose-Shift: switch action
                     round.my_action.opposite()
                 }
             }
@@ -49,7 +49,7 @@ impl Strategy for Pavlov {
     }
 
     fn is_nice(&self) -> bool {
-        true // Commence par coopérer
+        true // Starts by cooperating
     }
 
     fn clone_box(&self) -> Box<dyn Strategy> {
@@ -73,7 +73,7 @@ mod tests {
         let mut strategy = Pavlov;
         let mut history = History::new();
 
-        // Coopération mutuelle (R) -> Win-Stay -> Coopérer
+        // Mutual cooperation (R) -> Win-Stay -> Cooperate
         history.push(Action::Cooperate, Action::Cooperate);
         assert_eq!(strategy.decide(&history), Action::Cooperate);
     }
@@ -83,7 +83,7 @@ mod tests {
         let mut strategy = Pavlov;
         let mut history = History::new();
 
-        // J'ai trahi, l'autre a coopéré (T) -> Win-Stay -> Trahir
+        // I defected, they cooperated (T) -> Win-Stay -> Defect
         history.push(Action::Defect, Action::Cooperate);
         assert_eq!(strategy.decide(&history), Action::Defect);
     }
@@ -93,7 +93,7 @@ mod tests {
         let mut strategy = Pavlov;
         let mut history = History::new();
 
-        // J'ai coopéré, l'autre a trahi (S) -> Lose-Shift -> Trahir
+        // I cooperated, they defected (S) -> Lose-Shift -> Defect
         history.push(Action::Cooperate, Action::Defect);
         assert_eq!(strategy.decide(&history), Action::Defect);
     }
@@ -103,7 +103,7 @@ mod tests {
         let mut strategy = Pavlov;
         let mut history = History::new();
 
-        // Trahison mutuelle (P) -> Lose-Shift -> Coopérer
+        // Mutual defection (P) -> Lose-Shift -> Cooperate
         history.push(Action::Defect, Action::Defect);
         assert_eq!(strategy.decide(&history), Action::Cooperate);
     }

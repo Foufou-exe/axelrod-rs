@@ -10,26 +10,26 @@ fn main() {
 
     loop {
         let options = vec![
-            "Tournoi Round-Robin (Axelrod classique)",
-            "Tournoi Écologique (Évolutionnaire)",
-            "Match 1v1 (deux stratégies)",
-            "Liste des stratégies",
-            "Quitter",
+            "Round-Robin Tournament (Classic Axelrod)",
+            "Ecological Tournament (Evolutionary)",
+            "1v1 Match (two strategies)",
+            "List strategies",
+            "Quit",
         ];
 
-        let choice = Select::new("Que souhaitez-vous faire ?", options).prompt();
+        let choice = Select::new("What would you like to do?", options).prompt();
 
         match choice {
-            Ok("Tournoi Round-Robin (Axelrod classique)") => run_round_robin_tournament(),
-            Ok("Tournoi Écologique (Évolutionnaire)") => run_ecological_tournament(),
-            Ok("Match 1v1 (deux stratégies)") => run_1v1_match(),
-            Ok("Liste des stratégies") => display_strategies(),
-            Ok("Quitter") => {
-                println!("\nMerci d'avoir joué ! À bientôt dans l'arène.");
+            Ok("Round-Robin Tournament (Classic Axelrod)") => run_round_robin_tournament(),
+            Ok("Ecological Tournament (Evolutionary)") => run_ecological_tournament(),
+            Ok("1v1 Match (two strategies)") => run_1v1_match(),
+            Ok("List strategies") => display_strategies(),
+            Ok("Quit") => {
+                println!("\nThank you for playing! See you in the arena.");
                 break;
             }
             _ => {
-                println!("Erreur lors de la sélection ou annulation.");
+                println!("Selection error or cancellation.");
                 break;
             }
         }
@@ -39,7 +39,7 @@ fn main() {
 }
 
 fn print_banner() {
-    let titre = r#"
+    let title = r#"
  ███████████ █████                   █████    █████                                            
 ▒█▒▒▒███▒▒▒█▒▒███                   ▒▒███    ▒▒███                                             
 ▒   ▒███  ▒  ▒███████    ██████     ███████   ▒███████    ██████   ██████  ████████  █████ ████
@@ -52,24 +52,24 @@ fn print_banner() {
                                                                                      ▒▒██████  
                                                                                       ▒▒▒▒▒▒   
 "#;
-    println!("{}", titre);
-    println!("D'après Robert Axelrod - The Evolution of Cooperation (1984)\n");
+    println!("{}", title);
+    println!("Based on Robert Axelrod - The Evolution of Cooperation (1984)\n");
     println!(
-        "Conception de {} - v{}\n",
+        "Designed by {} - v{}\n",
         env!("CARGO_PKG_AUTHORS"),
         env!("CARGO_PKG_VERSION")
     );
     println!("╔═══════════════════════════════════════════════════════════════════════════╗");
-    println!("║  Simulateur du Dilemme du Prisonnier Itéré                                ║");
-    println!("║  Explorez l'émergence de la coopération entre stratégies automatisées     ║");
+    println!("║  Iterated Prisoner's Dilemma Simulator                                    ║");
+    println!("║  Explore the emergence of cooperation between automated strategies        ║");
     println!("╚═══════════════════════════════════════════════════════════════════════════╝\n");
 }
 
 fn run_round_robin_tournament() {
-    println!("\n═══ TOURNOI ROUND-ROBIN ═══\n");
+    println!("\n=== ROUND-ROBIN TOURNAMENT ===\n");
 
-    // Configuration du nombre de rounds
-    let rounds_input = Text::new("Nombre de rounds par match (défaut: 200):")
+    // Configure number of rounds
+    let rounds_input = Text::new("Number of rounds per match (default: 200):")
         .with_default("200")
         .prompt();
 
@@ -78,54 +78,54 @@ fn run_round_robin_tournament() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(200);
 
-    println!("\nLancement du tournoi avec {} rounds par match...", rounds);
-    println!("Chaque stratégie joue contre toutes les autres (y compris elle-même).\n");
+    println!("\nStarting tournament with {} rounds per match...", rounds);
+    println!("Each strategy plays against all others (including itself).\n");
 
     let config = MatchConfig::with_rounds(rounds);
     let tournament = RoundRobinTournament::new(config);
     let result = tournament.run();
 
-    // Affichage des résultats
+    // Display results
     println!("{}", result.display_rankings());
 
-    // Analyse
-    println!("\n═══ ANALYSE ═══");
+    // Analysis
+    println!("\n=== ANALYSIS ===");
     if let Some(winner) = result.winner() {
         println!(
-            "Vainqueur: {} avec {} points (moyenne: {:.1}/match)",
+            "Winner: {} with {} points (average: {:.1}/match)",
             winner.name, winner.total_score, winner.average_score
         );
 
         if winner.is_nice {
-            println!("C'est une stratégie 'gentille' (ne trahit jamais en premier).");
+            println!("This is a 'nice' strategy (never defects first).");
         } else {
-            println!("C'est une stratégie 'méchante' (peut trahir en premier).");
+            println!("This is a 'nasty' strategy (may defect first).");
         }
     }
 
-    // Compter les stratégies nice dans le top 5
+    // Count nice strategies in top 5
     let nice_in_top5 = result.rankings[..5.min(result.rankings.len())]
         .iter()
         .filter(|p| p.is_nice)
         .count();
 
     println!(
-        "\nStratégies 'gentilles' dans le top 5: {}/{}",
+        "\n'Nice' strategies in top 5: {}/{}",
         nice_in_top5,
         5.min(result.rankings.len())
     );
 
     // Conclusion
     if nice_in_top5 >= 3 {
-        println!("\n→ Comme Axelrod l'a découvert, les stratégies 'gentilles' dominent !");
+        println!("\n-> As Axelrod discovered, 'nice' strategies dominate!");
     }
 }
 
 fn run_ecological_tournament() {
-    println!("\n═══ TOURNOI ÉCOLOGIQUE (ÉVOLUTIONNAIRE) ═══\n");
+    println!("\n=== ECOLOGICAL TOURNAMENT (EVOLUTIONARY) ===\n");
 
     // Configuration
-    let generations_input = Text::new("Nombre de générations (défaut: 100):")
+    let generations_input = Text::new("Number of generations (default: 100):")
         .with_default("100")
         .prompt();
 
@@ -134,7 +134,7 @@ fn run_ecological_tournament() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(100);
 
-    let population_input = Text::new("Population initiale par stratégie (défaut: 100):")
+    let population_input = Text::new("Initial population per strategy (default: 100):")
         .with_default("100")
         .prompt();
 
@@ -144,10 +144,10 @@ fn run_ecological_tournament() {
         .unwrap_or(100);
 
     println!(
-        "\nSimulation de {} générations avec {} individus par stratégie...",
+        "\nSimulating {} generations with {} individuals per strategy...",
         generations, initial_population
     );
-    println!("Les populations évoluent selon le succès de chaque stratégie.\n");
+    println!("Populations evolve based on each strategy's success.\n");
 
     let config = EcologicalConfig::new(
         MatchConfig::with_rounds(200),
@@ -159,37 +159,37 @@ fn run_ecological_tournament() {
     let tournament = EcologicalTournament::new(config);
     let generations_history = tournament.run();
 
-    // Affichage de l'évolution
+    // Display evolution
     println!(
         "{}",
         EcologicalTournament::display_evolution(&generations_history)
     );
 
-    // Analyse finale
+    // Final analysis
     if let Some(last_gen) = generations_history.last() {
-        println!("\n═══ ANALYSE FINALE ═══");
+        println!("\n=== FINAL ANALYSIS ===");
 
         let alive = last_gen.alive_strategies();
-        println!("Stratégies survivantes: {}", alive.len());
+        println!("Surviving strategies: {}", alive.len());
 
         if let Some(dominant) = last_gen.dominant_strategy() {
             let strategy = dominant.create();
-            println!("Stratégie dominante: {}", dominant);
+            println!("Dominant strategy: {}", dominant);
 
             if strategy.is_nice() {
-                println!("\n→ Une stratégie 'gentille' a dominé l'évolution !");
-                println!("  Cela confirme la découverte d'Axelrod: la coopération émerge.");
+                println!("\n-> A 'nice' strategy dominated the evolution!");
+                println!("  This confirms Axelrod's discovery: cooperation emerges.");
             } else {
-                println!("\n→ Une stratégie 'méchante' a survécu.");
-                println!("  Cela peut arriver dans certaines configurations de population.");
+                println!("\n-> A 'nasty' strategy survived.");
+                println!("  This can happen in certain population configurations.");
             }
         }
 
-        // Montrer l'évolution des stratégies nice
+        // Show evolution of nice strategies
         let nice_count = alive.iter().filter(|s| s.create().is_nice()).count();
 
         println!(
-            "\nStratégies 'gentilles' survivantes: {}/{}",
+            "\nSurviving 'nice' strategies: {}/{}",
             nice_count,
             alive.len()
         );
@@ -197,21 +197,20 @@ fn run_ecological_tournament() {
 }
 
 fn run_1v1_match() {
-    println!("\n═══ MATCH 1v1 ═══\n");
+    println!("\n=== 1v1 MATCH ===\n");
 
     let strategies: Vec<&str> = StrategyType::all().iter().map(|s| s.name()).collect();
 
-    let strategy1_name =
-        Select::new("Choisissez la première stratégie:", strategies.clone()).prompt();
+    let strategy1_name = Select::new("Choose the first strategy:", strategies.clone()).prompt();
 
-    let strategy2_name = Select::new("Choisissez la deuxième stratégie:", strategies).prompt();
+    let strategy2_name = Select::new("Choose the second strategy:", strategies).prompt();
 
     if let (Ok(name1), Ok(name2)) = (strategy1_name, strategy2_name) {
         let strategy1 = find_strategy_by_name(name1);
         let strategy2 = find_strategy_by_name(name2);
 
         if let (Some(s1), Some(s2)) = (strategy1, strategy2) {
-            let rounds_input = Text::new("Nombre de rounds (défaut: 200):")
+            let rounds_input = Text::new("Number of rounds (default: 200):")
                 .with_default("200")
                 .prompt();
 
@@ -232,7 +231,7 @@ fn run_1v1_match() {
             };
 
             println!("╔═══════════════════════════════════════════════════════════════╗");
-            println!("║                    RÉSULTAT DU MATCH                          ║");
+            println!("║                       MATCH RESULT                            ║");
             println!("╠═══════════════════════════════════════════════════════════════╣");
             println!(
                 "║ {:<25} : {:>5} points ({:>5.1}% coop)    ║",
@@ -249,21 +248,21 @@ fn run_1v1_match() {
             println!("╠═══════════════════════════════════════════════════════════════╣");
 
             match result.winner() {
-                Some(winner) => println!("║ Vainqueur: {:<50} ║", winner),
-                None => println!("║ Résultat: ÉGALITÉ                                         ║"),
+                Some(winner) => println!("║ Winner: {:<52} ║", winner),
+                None => println!("║ Result: TIE                                               ║"),
             }
 
             println!(
-                "║ Coopération mutuelle: {:.1}%                                  ║",
+                "║ Mutual cooperation: {:.1}%                                    ║",
                 result.mutual_cooperation_rate() * 100.0
             );
             println!("╚═══════════════════════════════════════════════════════════════╝");
 
-            // Afficher quelques rounds
-            println!("\n10 premiers rounds:");
+            // Display some rounds
+            println!("\nFirst 10 rounds:");
             for (i, round) in result.rounds.iter().take(10).enumerate() {
                 println!(
-                    "  Round {:>3}: {} vs {} → ({:>2}, {:>2})",
+                    "  Round {:>3}: {} vs {} -> ({:>2}, {:>2})",
                     i + 1,
                     round.action1,
                     round.action2,
@@ -272,7 +271,7 @@ fn run_1v1_match() {
                 );
             }
             if result.rounds.len() > 10 {
-                println!("  ... ({} rounds au total)", result.rounds.len());
+                println!("  ... ({} rounds total)", result.rounds.len());
             }
         }
     }
@@ -280,14 +279,14 @@ fn run_1v1_match() {
 
 fn display_strategies() {
     println!("\n╔═══════════════════════════════════════════════════════════════════════════╗");
-    println!("║                        STRATÉGIES DISPONIBLES                             ║");
+    println!("║                        AVAILABLE STRATEGIES                              ║");
     println!("╠═══════════════════════════════════════════════════════════════════════════╣");
-    println!("║ Nom                      │ Nice │ Description                             ║");
+    println!("║ Name                     │ Nice │ Description                             ║");
     println!("╠══════════════════════════╪══════╪═════════════════════════════════════════╣");
 
     for strategy_type in StrategyType::all() {
         let strategy = strategy_type.create();
-        let nice = if strategy.is_nice() { "Oui" } else { "Non" };
+        let nice = if strategy.is_nice() { "Yes" } else { "No" };
         println!(
             "║ {:<24} │ {:>4} │ {:<39} ║",
             truncate_str(strategy.name(), 24),
@@ -298,8 +297,8 @@ fn display_strategies() {
 
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
 
-    println!("\nLégende:");
-    println!("  Nice = Ne trahit jamais en premier (caractéristique gagnante selon Axelrod)");
+    println!("\nLegend:");
+    println!("  Nice = Never defects first (winning characteristic according to Axelrod)");
 }
 
 fn find_strategy_by_name(name: &str) -> Option<StrategyType> {

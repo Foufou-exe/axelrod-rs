@@ -1,16 +1,16 @@
-//! Stratégie Suspicious Tit for Tat (TFT méfiant)
+//! Suspicious Tit for Tat Strategy
 //!
-//! Variante de Tit for Tat qui commence par trahir.
-//! - Trahit au premier tour
-//! - Ensuite, copie l'action précédente de l'adversaire
+//! A variant of Tit for Tat that starts by defecting.
+//! - Defects on the first move
+//! - Then copies the opponent's previous action
 //!
-//! Non-gentille car elle trahit en premier.
+//! Not nice because it defects first.
 
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
 
-/// Stratégie Suspicious Tit for Tat
+/// Suspicious Tit for Tat strategy
 #[derive(Debug, Clone, Copy, Default)]
 pub struct SuspiciousTitForTat;
 
@@ -20,12 +20,12 @@ impl Strategy for SuspiciousTitForTat {
     }
 
     fn description(&self) -> &'static str {
-        "Comme TFT mais commence par trahir"
+        "Like TFT but starts by defecting"
     }
 
     fn decide(&mut self, history: &History) -> Action {
-        // Premier tour: trahir (méfiance)
-        // Ensuite: copier l'adversaire
+        // First round: defect (suspicious)
+        // Then: copy opponent
         history.last_opponent_action().unwrap_or(Action::Defect)
     }
 
@@ -54,13 +54,13 @@ mod tests {
         let mut strategy = SuspiciousTitForTat;
         let mut history = History::new();
 
-        // Premier tour: trahit
+        // First round: defects
         history.push(Action::Defect, Action::Cooperate);
-        // L'adversaire a coopéré -> on coopère
+        // Opponent cooperated -> we cooperate
         assert_eq!(strategy.decide(&history), Action::Cooperate);
 
         history.push(Action::Cooperate, Action::Defect);
-        // L'adversaire a trahi -> on trahit
+        // Opponent defected -> we defect
         assert_eq!(strategy.decide(&history), Action::Defect);
     }
 

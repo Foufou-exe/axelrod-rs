@@ -1,15 +1,15 @@
-//! Historique des interactions entre deux joueurs
+//! History of interactions between two players
 //!
-//! Permet aux stratégies de consulter les coups passés pour prendre leurs décisions.
+//! Allows strategies to consult past moves to make their decisions.
 
 use crate::action::Action;
 
-/// Représente un round joué (les deux actions)
+/// Represents a played round (both actions)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Round {
-    /// Action du joueur dont on tient l'historique
+    /// Action of the player holding this history
     pub my_action: Action,
-    /// Action de l'adversaire
+    /// Opponent's action
     pub opponent_action: Action,
 }
 
@@ -22,57 +22,57 @@ impl Round {
     }
 }
 
-/// Historique des interactions du point de vue d'un joueur
+/// History of interactions from one player's perspective
 #[derive(Debug, Clone, Default)]
 pub struct History {
-    /// Liste des rounds joués
+    /// List of played rounds
     rounds: Vec<Round>,
 }
 
 impl History {
-    /// Crée un nouvel historique vide
+    /// Creates a new empty history
     pub fn new() -> Self {
         Self { rounds: Vec::new() }
     }
 
-    /// Crée un historique avec une capacité pré-allouée
+    /// Creates a history with pre-allocated capacity
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             rounds: Vec::with_capacity(capacity),
         }
     }
 
-    /// Ajoute un round à l'historique
+    /// Adds a round to the history
     pub fn push(&mut self, my_action: Action, opponent_action: Action) {
         self.rounds.push(Round::new(my_action, opponent_action));
     }
 
-    /// Retourne le nombre de rounds joués
+    /// Returns the number of played rounds
     pub fn len(&self) -> usize {
         self.rounds.len()
     }
 
-    /// Vérifie si l'historique est vide
+    /// Checks if the history is empty
     pub fn is_empty(&self) -> bool {
         self.rounds.is_empty()
     }
 
-    /// Retourne le dernier round joué
+    /// Returns the last played round
     pub fn last(&self) -> Option<&Round> {
         self.rounds.last()
     }
 
-    /// Retourne la dernière action de l'adversaire
+    /// Returns the opponent's last action
     pub fn last_opponent_action(&self) -> Option<Action> {
         self.rounds.last().map(|r| r.opponent_action)
     }
 
-    /// Retourne la dernière action du joueur
+    /// Returns the player's last action
     pub fn last_my_action(&self) -> Option<Action> {
         self.rounds.last().map(|r| r.my_action)
     }
 
-    /// Retourne les n dernières actions de l'adversaire
+    /// Returns the last n opponent actions
     pub fn last_n_opponent_actions(&self, n: usize) -> Vec<Action> {
         self.rounds
             .iter()
@@ -85,7 +85,7 @@ impl History {
             .collect()
     }
 
-    /// Compte le nombre de coopérations de l'adversaire
+    /// Counts the number of opponent cooperations
     pub fn count_opponent_cooperations(&self) -> usize {
         self.rounds
             .iter()
@@ -93,7 +93,7 @@ impl History {
             .count()
     }
 
-    /// Compte le nombre de trahisons de l'adversaire
+    /// Counts the number of opponent defections
     pub fn count_opponent_defections(&self) -> usize {
         self.rounds
             .iter()
@@ -101,34 +101,34 @@ impl History {
             .count()
     }
 
-    /// Vérifie si l'adversaire a déjà trahi
+    /// Checks if the opponent has ever defected
     pub fn opponent_has_defected(&self) -> bool {
         self.rounds
             .iter()
             .any(|r| r.opponent_action == Action::Defect)
     }
 
-    /// Retourne le round à l'index donné (0-indexed)
+    /// Returns the round at the given index (0-indexed)
     pub fn get(&self, index: usize) -> Option<&Round> {
         self.rounds.get(index)
     }
 
-    /// Itère sur tous les rounds
+    /// Iterates over all rounds
     pub fn iter(&self) -> impl Iterator<Item = &Round> {
         self.rounds.iter()
     }
 
-    /// Retourne toutes les actions de l'adversaire
+    /// Returns all opponent actions
     pub fn opponent_actions(&self) -> Vec<Action> {
         self.rounds.iter().map(|r| r.opponent_action).collect()
     }
 
-    /// Retourne toutes les actions du joueur
+    /// Returns all player actions
     pub fn my_actions(&self) -> Vec<Action> {
         self.rounds.iter().map(|r| r.my_action).collect()
     }
 
-    /// Efface l'historique
+    /// Clears the history
     pub fn clear(&mut self) {
         self.rounds.clear();
     }

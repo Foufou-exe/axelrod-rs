@@ -1,16 +1,16 @@
-//! Stratégie Tit for Two Tats (TF2T)
+//! Tit for Two Tats Strategy (TF2T)
 //!
-//! Variante plus tolérante de Tit for Tat.
-//! - Coopère au premier tour
-//! - Ne trahit qu'après DEUX trahisons consécutives de l'adversaire
+//! A more forgiving variant of Tit for Tat.
+//! - Cooperates on the first move
+//! - Only defects after TWO consecutive opponent defections
 //!
-//! Plus pardonnante que TFT, résiste mieux au bruit.
+//! More forgiving than TFT, better resistance to noise.
 
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
 
-/// Stratégie Tit for Two Tats
+/// Tit for Two Tats strategy
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TitForTwoTats;
 
@@ -20,13 +20,13 @@ impl Strategy for TitForTwoTats {
     }
 
     fn description(&self) -> &'static str {
-        "Coopère sauf si l'adversaire a trahi deux fois de suite"
+        "Cooperates unless opponent defected twice in a row"
     }
 
     fn decide(&mut self, history: &History) -> Action {
         let last_two = history.last_n_opponent_actions(2);
 
-        // Trahit seulement si les deux dernières actions adverses sont des trahisons
+        // Defects only if the last two opponent actions were defections
         if last_two.len() >= 2 && last_two[0] == Action::Defect && last_two[1] == Action::Defect {
             Action::Defect
         } else {
@@ -60,7 +60,7 @@ mod tests {
         let mut history = History::new();
 
         history.push(Action::Cooperate, Action::Defect);
-        // Une seule trahison -> on coopère encore
+        // Single defection -> still cooperate
         assert_eq!(strategy.decide(&history), Action::Cooperate);
     }
 
@@ -71,7 +71,7 @@ mod tests {
 
         history.push(Action::Cooperate, Action::Defect);
         history.push(Action::Cooperate, Action::Defect);
-        // Deux trahisons consécutives -> on trahit
+        // Two consecutive defections -> defect
         assert_eq!(strategy.decide(&history), Action::Defect);
     }
 
@@ -83,7 +83,7 @@ mod tests {
         history.push(Action::Cooperate, Action::Defect);
         history.push(Action::Cooperate, Action::Cooperate);
         history.push(Action::Cooperate, Action::Defect);
-        // Trahisons non consécutives -> on coopère
+        // Non-consecutive defections -> cooperate
         assert_eq!(strategy.decide(&history), Action::Cooperate);
     }
 
