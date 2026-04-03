@@ -13,6 +13,7 @@ A high-performance evolutionary game theory simulator written in Rust. This proj
 
 Inspired by Robert Axelrod's groundbreaking work *"The Evolution of Cooperation"* (1984) and his computer tournaments (1980-1984).
 
+
 ## Table of Contents
 
 - [Features](#features)
