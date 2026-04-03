@@ -6,15 +6,13 @@ on:
       - main
     paths:
       - 'Cargo.toml'
-  # Also allow manual trigger and tag-based trigger
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
         description: 'Version to release (without v prefix)'
         required: false
-  push:
-    tags:
-      - 'v*'
 
 env:
   CARGO_TERM_COLOR: always
