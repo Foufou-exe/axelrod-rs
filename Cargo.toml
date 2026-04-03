@@ -1,6 +1,6 @@
 [package]
 name = "axelrod-rs"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2024"
 authors = ["Thibaut Maurras"]
 description = "High-performance Iterated Prisoner's Dilemma simulator inspired by Robert Axelrod's tournaments"
@@ -11,7 +11,7 @@ categories = ["simulation", "science", "command-line-utilities"]
 
 [dependencies]
 # CLI
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4.6.0", features = ["derive"] }
 inquire = "0.9.4"
 
 # Serialization
