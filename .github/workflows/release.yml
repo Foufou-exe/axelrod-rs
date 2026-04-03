@@ -112,4 +112,4 @@ jobs:
             release/axelrod-rs-macos-x86_64
             release/axelrod-rs-macos-aarch64
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUBE_TOKEN }}

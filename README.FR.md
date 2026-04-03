@@ -3,6 +3,10 @@
 [![CI](https://github.com/foufou-exe/axelrod-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/foufou-exe/axelrod-rs/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](https://www.rust-lang.org/)
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=Foufou-exe_axelrod-rs)](https://sonarcloud.io/summary/new_code?id=Foufou-exe_axelrod-rs)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Foufou-exe_axelrod-rs&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Foufou-exe_axelrod-rs)
+[![SonarQube Cloud](https://sonarcloud.io/images/project_badges/sonarcloud-highlight.svg)](https://sonarcloud.io/summary/new_code?id=Foufou-exe_axelrod-rs)
+
 
 *[English version](README.md)*
 
