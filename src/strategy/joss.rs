@@ -10,7 +10,7 @@
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
-use rand::{Rng, RngExt};
+use rand::RngExt;
 
 /// Joss strategy - Sneaky Tit for Tat
 #[derive(Debug, Clone)]

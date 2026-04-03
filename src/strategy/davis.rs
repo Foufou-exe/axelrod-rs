@@ -61,10 +61,10 @@ impl Strategy for Davis {
         // After grace period: check for betrayal
         if !self.betrayed {
             // Check if opponent defected
-            if let Some(last) = history.last() {
-                if last.opponent_action == Action::Defect {
-                    self.betrayed = true;
-                }
+            if let Some(last) = history.last()
+                && last.opponent_action == Action::Defect
+            {
+                self.betrayed = true;
             }
         }
 

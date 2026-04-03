@@ -6,7 +6,7 @@
 use crate::game::{Match, MatchConfig, MatchResult};
 use crate::player::Player;
 use crate::strategy::StrategyType;
-use comfy_table::{presets::UTF8_FULL, Cell, ContentArrangement, Table};
+use comfy_table::{Cell, ContentArrangement, Table, presets::UTF8_FULL};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -100,12 +100,16 @@ impl RoundRobinTournament {
     pub fn with_strategies(strategies: Vec<StrategyType>, config: MatchConfig) -> Self {
         Self { config, strategies }
     }
+}
 
+impl Default for RoundRobinTournament {
     /// Creates a tournament with default configuration
-    pub fn default() -> Self {
+    fn default() -> Self {
         Self::new(MatchConfig::default())
     }
+}
 
+impl RoundRobinTournament {
     /// Runs the tournament and returns the results
     pub fn run(&self) -> TournamentResult {
         // Generate all match pairs

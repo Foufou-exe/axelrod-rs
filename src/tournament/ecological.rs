@@ -10,7 +10,7 @@
 use crate::game::{Match, MatchConfig};
 use crate::player::Player;
 use crate::strategy::StrategyType;
-use comfy_table::{presets::UTF8_FULL, Cell, ContentArrangement, Table};
+use comfy_table::{Cell, ContentArrangement, Table, presets::UTF8_FULL};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -28,8 +28,8 @@ pub struct EcologicalConfig {
     pub extinction_threshold: u32,
 }
 
-impl EcologicalConfig {
-    pub fn default() -> Self {
+impl Default for EcologicalConfig {
+    fn default() -> Self {
         Self {
             match_config: MatchConfig::default(),
             generations: 100,
@@ -37,7 +37,9 @@ impl EcologicalConfig {
             extinction_threshold: 1,
         }
     }
+}
 
+impl EcologicalConfig {
     pub fn new(
         match_config: MatchConfig,
         generations: u32,
@@ -153,10 +155,10 @@ impl EcologicalTournament {
 
             let mut average_scores: HashMap<StrategyType, f64> = HashMap::new();
             for (&strategy, &score) in &scores {
-                if let Some(&pop) = populations.get(&strategy) {
-                    if pop > 0 {
-                        average_scores.insert(strategy, score as f64 / pop as f64);
-                    }
+                if let Some(&pop) = populations.get(&strategy)
+                    && pop > 0
+                {
+                    average_scores.insert(strategy, score as f64 / pop as f64);
                 }
             }
 

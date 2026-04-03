@@ -5,27 +5,43 @@
 
 mod always_cooperate;
 mod always_defect;
+mod davis;
+mod feld;
 mod generous_tft;
 mod go_by_majority;
+mod graaskamp;
+mod grofman;
 mod grudger;
+mod joss;
+mod nydegger;
 mod pavlov;
 mod prober;
 mod random;
+mod shubik;
 mod suspicious_tft;
 mod tit_for_tat;
 mod tit_for_two_tats;
+mod tullock;
 
 pub use always_cooperate::AlwaysCooperate;
 pub use always_defect::AlwaysDefect;
+pub use davis::Davis;
+pub use feld::Feld;
 pub use generous_tft::GenerousTitForTat;
 pub use go_by_majority::{HardGoByMajority, SoftGoByMajority};
+pub use graaskamp::Graaskamp;
+pub use grofman::Grofman;
 pub use grudger::Grudger;
+pub use joss::Joss;
+pub use nydegger::Nydegger;
 pub use pavlov::Pavlov;
 pub use prober::Prober;
 pub use random::Random;
+pub use shubik::Shubik;
 pub use suspicious_tft::SuspiciousTitForTat;
 pub use tit_for_tat::TitForTat;
 pub use tit_for_two_tats::TitForTwoTats;
+pub use tullock::Tullock;
 
 use crate::action::Action;
 use crate::history::History;
@@ -76,6 +92,15 @@ pub enum StrategyType {
     Prober,
     HardGoByMajority,
     SoftGoByMajority,
+    // Axelrod's Tournament Strategies (1980-1984)
+    Joss,
+    Graaskamp,
+    Tullock,
+    Feld,
+    Nydegger,
+    Grofman,
+    Shubik,
+    Davis,
 }
 
 impl StrategyType {
@@ -94,6 +119,15 @@ impl StrategyType {
             StrategyType::Prober,
             StrategyType::HardGoByMajority,
             StrategyType::SoftGoByMajority,
+            // Axelrod's Tournament Strategies (1980-1984)
+            StrategyType::Joss,
+            StrategyType::Graaskamp,
+            StrategyType::Tullock,
+            StrategyType::Feld,
+            StrategyType::Nydegger,
+            StrategyType::Grofman,
+            StrategyType::Shubik,
+            StrategyType::Davis,
         ]
     }
 
@@ -112,6 +146,15 @@ impl StrategyType {
             StrategyType::Prober => Box::new(Prober::new()),
             StrategyType::HardGoByMajority => Box::new(HardGoByMajority),
             StrategyType::SoftGoByMajority => Box::new(SoftGoByMajority),
+            // Axelrod's Tournament Strategies (1980-1984)
+            StrategyType::Joss => Box::new(Joss::new()),
+            StrategyType::Graaskamp => Box::new(Graaskamp::new()),
+            StrategyType::Tullock => Box::new(Tullock::new()),
+            StrategyType::Feld => Box::new(Feld::new()),
+            StrategyType::Nydegger => Box::new(Nydegger::new()),
+            StrategyType::Grofman => Box::new(Grofman),
+            StrategyType::Shubik => Box::new(Shubik::new()),
+            StrategyType::Davis => Box::new(Davis::new()),
         }
     }
 
@@ -130,6 +173,15 @@ impl StrategyType {
             StrategyType::Prober => "Prober",
             StrategyType::HardGoByMajority => "Hard Go By Majority",
             StrategyType::SoftGoByMajority => "Soft Go By Majority",
+            // Axelrod's Tournament Strategies (1980-1984)
+            StrategyType::Joss => "Joss",
+            StrategyType::Graaskamp => "Graaskamp",
+            StrategyType::Tullock => "Tullock",
+            StrategyType::Feld => "Feld",
+            StrategyType::Nydegger => "Nydegger",
+            StrategyType::Grofman => "Grofman",
+            StrategyType::Shubik => "Shubik",
+            StrategyType::Davis => "Davis",
         }
     }
 

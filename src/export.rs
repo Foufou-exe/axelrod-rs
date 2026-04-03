@@ -82,7 +82,7 @@ pub fn export_round_robin(result: &TournamentResult, path: &Path) -> io::Result<
 /// Export round-robin results to JSON
 fn export_round_robin_json(result: &TournamentResult, path: &Path) -> io::Result<()> {
     let file = File::create(path)?;
-    serde_json::to_writer_pretty(file, result).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+    serde_json::to_writer_pretty(file, result).map_err(io::Error::other)
 }
 
 /// Export round-robin results to CSV
@@ -92,9 +92,7 @@ fn export_round_robin_csv(result: &TournamentResult, path: &Path) -> io::Result<
 
     for (rank, score) in result.rankings.iter().enumerate() {
         let csv_score = CsvPlayerScore::from_player_score(rank + 1, score);
-        writer
-            .serialize(csv_score)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        writer.serialize(csv_score).map_err(io::Error::other)?;
     }
 
     writer.flush()?;
@@ -119,8 +117,7 @@ pub fn export_ecological(generations: &[Generation], path: &Path) -> io::Result<
 /// Export ecological results to JSON
 fn export_ecological_json(generations: &[Generation], path: &Path) -> io::Result<()> {
     let file = File::create(path)?;
-    serde_json::to_writer_pretty(file, generations)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+    serde_json::to_writer_pretty(file, generations).map_err(io::Error::other)
 }
 
 /// Export ecological results to CSV
@@ -148,9 +145,7 @@ fn export_ecological_csv(generations: &[Generation], path: &Path) -> io::Result<
                 average_score: avg_score,
             };
 
-            writer
-                .serialize(csv_gen)
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            writer.serialize(csv_gen).map_err(io::Error::other)?;
         }
     }
 
@@ -176,7 +171,7 @@ pub fn export_match(result: &MatchResult, path: &Path) -> io::Result<()> {
 /// Export match result to JSON
 fn export_match_json(result: &MatchResult, path: &Path) -> io::Result<()> {
     let file = File::create(path)?;
-    serde_json::to_writer_pretty(file, result).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+    serde_json::to_writer_pretty(file, result).map_err(io::Error::other)
 }
 
 /// Flattened round data for CSV export
@@ -207,9 +202,7 @@ fn export_match_csv(result: &MatchResult, path: &Path) -> io::Result<()> {
             score2: round.score2,
         };
 
-        writer
-            .serialize(csv_round)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        writer.serialize(csv_round).map_err(io::Error::other)?;
     }
 
     writer.flush()?;
@@ -220,8 +213,7 @@ fn export_match_csv(result: &MatchResult, path: &Path) -> io::Result<()> {
 pub fn write_round_robin_stdout(result: &TournamentResult, format: ExportFormat) -> io::Result<()> {
     match format {
         ExportFormat::Json => {
-            let json = serde_json::to_string_pretty(result)
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            let json = serde_json::to_string_pretty(result).map_err(io::Error::other)?;
             println!("{}", json);
             Ok(())
         }
@@ -229,9 +221,7 @@ pub fn write_round_robin_stdout(result: &TournamentResult, format: ExportFormat)
             let mut writer = csv::Writer::from_writer(io::stdout());
             for (rank, score) in result.rankings.iter().enumerate() {
                 let csv_score = CsvPlayerScore::from_player_score(rank + 1, score);
-                writer
-                    .serialize(csv_score)
-                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+                writer.serialize(csv_score).map_err(io::Error::other)?;
             }
             writer.flush()?;
             Ok(())

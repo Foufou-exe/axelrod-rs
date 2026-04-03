@@ -10,7 +10,7 @@
 use crate::action::Action;
 use crate::history::History;
 use crate::strategy::Strategy;
-use rand::{Rng, RngExt};
+use rand::RngExt;
 
 /// Feld strategy - TFT with decreasing cooperation
 #[derive(Debug, Clone)]

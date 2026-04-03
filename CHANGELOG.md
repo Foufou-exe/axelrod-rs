@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **8 new historical strategies** from Axelrod's first tournament (1980):
+  - **Joss**: Sneaky Tit for Tat - cooperates like TFT but randomly defects ~10% of the time
+  - **Graaskamp**: TFT with a probe - defects on round 50 to test opponent's response
+  - **Tullock**: Cooperates for 11 rounds, then mostly defects (10% cooperation)
+  - **Feld**: TFT with decreasing cooperation probability (100% → 50% over 200 rounds)
+  - **Nydegger**: Uses a lookup table based on the last 3 rounds of play
+  - **Grofman**: Cooperates if both players made the same action last round
+  - **Shubik**: Escalating retaliation - retaliates N times after Nth betrayal
+  - **Davis**: 10 rounds grace period, then permanent Grudger behavior
+
+### Changed
+
+- Total strategies increased from 12 to 20
+
 ## [0.2.0] - 2026-04-01
 
 ### Added

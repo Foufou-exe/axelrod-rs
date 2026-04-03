@@ -1,4 +1,4 @@
-use comfy_table::{presets::UTF8_FULL, Cell, ContentArrangement, Table};
+use comfy_table::{Cell, ContentArrangement, Table, presets::UTF8_FULL};
 use inquire::{Select, Text};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -131,7 +131,10 @@ fn run_cli_ecological(
     if !quiet {
         println!(
             "Running ecological tournament ({} generations, {} rounds/match, pop: {}, noise: {:.1}%)",
-            generations, rounds, population, noise * 100.0
+            generations,
+            rounds,
+            population,
+            noise * 100.0
         );
         if let Some(s) = seed {
             println!("Random seed: {}", s);

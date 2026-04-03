@@ -18,17 +18,19 @@ pub struct GenerousTitForTat {
     forgiveness_probability: f64,
 }
 
+impl Default for GenerousTitForTat {
+    /// Creates an instance with the default forgiveness probability (5%)
+    fn default() -> Self {
+        Self::new(0.05)
+    }
+}
+
 impl GenerousTitForTat {
     /// Creates a new instance with a custom forgiveness probability
     pub fn new(forgiveness_probability: f64) -> Self {
         Self {
             forgiveness_probability: forgiveness_probability.clamp(0.0, 1.0),
         }
-    }
-
-    /// Creates an instance with the default forgiveness probability (5%)
-    pub fn default() -> Self {
-        Self::new(0.05)
     }
 }
 

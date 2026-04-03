@@ -20,16 +20,18 @@ pub struct MatchConfig {
     pub noise: f64,
 }
 
-impl MatchConfig {
+impl Default for MatchConfig {
     /// Default configuration (200 rounds, classic matrix, no noise)
-    pub fn default() -> Self {
+    fn default() -> Self {
         Self {
             rounds: 200,
             payoff_matrix: PayoffMatrix::classic(),
             noise: 0.0,
         }
     }
+}
 
+impl MatchConfig {
     /// Custom configuration
     pub fn new(rounds: u32, payoff_matrix: PayoffMatrix) -> Self {
         Self {

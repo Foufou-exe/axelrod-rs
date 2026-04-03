@@ -45,12 +45,13 @@ impl Strategy for Shubik {
 
     fn decide(&mut self, history: &History) -> Action {
         // Check if opponent defected last round
-        if let Some(last) = history.last() {
-            if last.opponent_action == Action::Defect && self.retaliation_remaining == 0 {
-                // New betrayal detected (not during retaliation)
-                self.betrayal_count += 1;
-                self.retaliation_remaining = self.betrayal_count;
-            }
+        if let Some(last) = history.last()
+            && last.opponent_action == Action::Defect
+            && self.retaliation_remaining == 0
+        {
+            // New betrayal detected (not during retaliation)
+            self.betrayal_count += 1;
+            self.retaliation_remaining = self.betrayal_count;
         }
 
         // If in retaliation mode, defect

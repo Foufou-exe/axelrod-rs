@@ -55,12 +55,11 @@ impl Strategy for Prober {
                 // End of probe phase
                 // Check if opponent cooperated on rounds 2 and 3
                 self.probe_complete = true;
-                if let (Some(r2), Some(r3)) = (history.get(1), history.get(2)) {
-                    if r2.opponent_action == Action::Cooperate
-                        && r3.opponent_action == Action::Cooperate
-                    {
-                        self.is_exploiting = true;
-                    }
+                if let (Some(r2), Some(r3)) = (history.get(1), history.get(2))
+                    && r2.opponent_action == Action::Cooperate
+                    && r3.opponent_action == Action::Cooperate
+                {
+                    self.is_exploiting = true;
                 }
 
                 if self.is_exploiting {
