@@ -2,8 +2,23 @@ name: Release
 
 on:
   push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'Cargo.toml'
+      - 'src/**'
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (without v prefix)'
+        required: false
+      prerelease:
+        description: 'Mark as pre-release'
+        type: boolean
+        default: false
 
 env:
   CARGO_TERM_COLOR: always
@@ -12,9 +27,96 @@ permissions:
   contents: write
 
 jobs:
+  # First, check if version changed (only for branch push)
+  check-version:
+    name: Check Version Change
+    runs-on: ubuntu-latest
+    if: github.ref_type != 'tag'
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.version.outputs.version }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get current version
+        id: current
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+
+      - name: Get previous version
+        id: previous
+        run: |
+          git show HEAD~1:Cargo.toml > /tmp/prev_cargo.toml 2>/dev/null || echo 'version = "0.0.0"' > /tmp/prev_cargo.toml
+          PREV_VERSION=$(grep '^version' /tmp/prev_cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$PREV_VERSION" >> $GITHUB_OUTPUT
+          echo "Previous version: $PREV_VERSION"
+
+      - name: Determine version and release type
+        id: version
+        run: |
+          BASE_VERSION="${{ steps.current.outputs.version }}"
+          BRANCH="${{ github.ref_name }}"
+          
+          if [ "$BRANCH" == "develop" ]; then
+            # Pre-release: vX.X.X-beta-YYYYMMDD
+            DATE=$(date +%Y%m%d)
+            VERSION="${BASE_VERSION}-beta-${DATE}"
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            VERSION="${BASE_VERSION}"
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Final version: $VERSION"
+
+      - name: Check if should release
+        id: check
+        run: |
+          CURRENT="${{ steps.current.outputs.version }}"
+          PREVIOUS="${{ steps.previous.outputs.version }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          BRANCH="${{ github.ref_name }}"
+          
+          # For develop, always allow new beta if code changed
+          if [ "$BRANCH" == "develop" ]; then
+            if git ls-remote --tags origin | grep -q "refs/tags/v${VERSION}$"; then
+              echo "Tag v${VERSION} already exists, skipping release"
+              echo "should_release=false" >> $GITHUB_OUTPUT
+            else
+              echo "Creating beta release v${VERSION}"
+              echo "should_release=true" >> $GITHUB_OUTPUT
+            fi
+          # For main, only release if version changed
+          elif [ "$CURRENT" != "$PREVIOUS" ]; then
+            if git ls-remote --tags origin | grep -q "refs/tags/v${VERSION}$"; then
+              echo "Tag v${VERSION} already exists, skipping release"
+              echo "should_release=false" >> $GITHUB_OUTPUT
+            else
+              echo "Version changed from $PREVIOUS to $CURRENT, will release"
+              echo "should_release=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "Version unchanged"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+  # Build for all platforms
   build:
     name: Build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
+    needs: [check-version]
+    if: |
+      always() && 
+      (github.ref_type == 'tag' || 
+       needs.check-version.outputs.should_release == 'true' ||
+       github.event_name == 'workflow_dispatch')
     strategy:
       fail-fast: false
       matrix:
@@ -57,12 +159,153 @@ jobs:
           name: ${{ matrix.asset_name }}
           path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
 
+  # Create the release
   release:
     name: Create Release
-    needs: build
+    needs: [check-version, build]
+    if: |
+      always() && 
+      needs.build.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version and release type
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" == "tag" ]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+            # Check if it's a prerelease tag (contains beta, alpha, rc)
+            if [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"alpha"* ]] || [[ "$VERSION" == *"rc"* ]]; then
+              echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            else
+              echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            fi
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            echo "is_prerelease=${{ github.event.inputs.prerelease }}" >> $GITHUB_OUTPUT
+          else
+            VERSION="${{ needs.check-version.outputs.version }}"
+            echo "is_prerelease=${{ needs.check-version.outputs.is_prerelease }}" >> $GITHUB_OUTPUT
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+      - name: Get previous tag
+        id: prev_tag
+        run: |
+          # Get the latest tag before this release
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            # If no previous tag, use first commit
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+          echo "tag=$PREV_TAG" >> $GITHUB_OUTPUT
+          echo "Previous tag: $PREV_TAG"
+
+      - name: Generate release notes
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PREV_TAG="${{ steps.prev_tag.outputs.tag }}"
+          IS_PRERELEASE="${{ steps.version.outputs.is_prerelease }}"
+          
+          # Start release notes
+          if [ "$IS_PRERELEASE" == "true" ]; then
+            echo "## Pre-release v${VERSION}" > release_notes.md
+            echo "" >> release_notes.md
+            echo "> **Warning**: This is a beta release for testing purposes. Use with caution in production." >> release_notes.md
+          else
+            echo "## Release v${VERSION}" > release_notes.md
+          fi
+          echo "" >> release_notes.md
+          
+          # Try to extract changelog section for this version
+          if [ -f CHANGELOG.md ]; then
+            # Extract base version (without beta suffix)
+            BASE_VERSION=$(echo "$VERSION" | sed 's/-beta.*//')
+            CHANGELOG_SECTION=$(sed -n "/^## \[$BASE_VERSION\]/,/^## \[/p" CHANGELOG.md | head -n -1 || true)
+            if [ -n "$CHANGELOG_SECTION" ] && [ "$CHANGELOG_SECTION" != "" ]; then
+              echo "### Changelog" >> release_notes.md
+              echo "" >> release_notes.md
+              echo "$CHANGELOG_SECTION" | tail -n +2 >> release_notes.md
+              echo "" >> release_notes.md
+            fi
+          fi
+          
+          # Add commit summary
+          echo "### Commits since ${PREV_TAG}" >> release_notes.md
+          echo "" >> release_notes.md
+          
+          # Get commits since previous tag with conventional commit icons
+          git log ${PREV_TAG}..HEAD --pretty=format:"%s (%h)" | while read line; do
+            # Add icons based on conventional commits
+            if echo "$line" | grep -qi "^feat"; then
+              echo "- **feat**: $line"
+            elif echo "$line" | grep -qi "^fix"; then
+              echo "- **fix**: $line"
+            elif echo "$line" | grep -qi "^docs"; then
+              echo "- **docs**: $line"
+            elif echo "$line" | grep -qi "^refactor"; then
+              echo "- **refactor**: $line"
+            elif echo "$line" | grep -qi "^test"; then
+              echo "- **test**: $line"
+            elif echo "$line" | grep -qi "^chore"; then
+              echo "- **chore**: $line"
+            elif echo "$line" | grep -qi "^ci"; then
+              echo "- **ci**: $line"
+            elif echo "$line" | grep -qi "^perf"; then
+              echo "- **perf**: $line"
+            elif echo "$line" | grep -qi "^style"; then
+              echo "- **style**: $line"
+            else
+              echo "- $line"
+            fi
+          done >> release_notes.md
+          
+          echo "" >> release_notes.md
+          
+          # Add statistics
+          echo "### Statistics" >> release_notes.md
+          echo "" >> release_notes.md
+          COMMIT_COUNT=$(git rev-list ${PREV_TAG}..HEAD --count)
+          FILES_CHANGED=$(git diff --stat ${PREV_TAG}..HEAD | tail -1 | sed 's/^ *//' || echo "N/A")
+          CONTRIBUTORS=$(git log ${PREV_TAG}..HEAD --format='%an' | sort -u | wc -l)
+          echo "- **Commits**: ${COMMIT_COUNT}" >> release_notes.md
+          echo "- **Contributors**: ${CONTRIBUTORS}" >> release_notes.md
+          echo "- **Changes**: ${FILES_CHANGED}" >> release_notes.md
+          echo "" >> release_notes.md
+          
+          # Add download section
+          echo "### Downloads" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "| Platform | Binary |" >> release_notes.md
+          echo "|----------|--------|" >> release_notes.md
+          echo "| Linux x86_64 | \`axelrod-rs-linux-x86_64\` |" >> release_notes.md
+          echo "| Windows x86_64 | \`axelrod-rs-windows-x86_64.exe\` |" >> release_notes.md
+          echo "| macOS x86_64 | \`axelrod-rs-macos-x86_64\` |" >> release_notes.md
+          echo "| macOS ARM64 (Apple Silicon) | \`axelrod-rs-macos-aarch64\` |" >> release_notes.md
+          
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${VERSION}" >> release_notes.md
+          
+          cat release_notes.md
+
+      - name: Create tag if needed
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! git ls-remote --tags origin | grep -q "refs/tags/v${VERSION}$"; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "v${VERSION}" -m "Release v${VERSION}"
+            git push origin "v${VERSION}"
+            echo "Created tag v${VERSION}"
+          else
+            echo "Tag v${VERSION} already exists"
+          fi
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -84,32 +327,18 @@ jobs:
           cp artifacts/axelrod-rs-macos-aarch64/axelrod-rs release/axelrod-rs-macos-aarch64
           chmod +x release/axelrod-rs-macos-aarch64
 
-      - name: Generate changelog
-        id: changelog
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          # Extract changelog for this version (if exists)
-          if [ -f CHANGELOG.md ]; then
-            sed -n "/^## \[$VERSION\]/,/^## \[/p" CHANGELOG.md | head -n -1 > release_notes.md
-            if [ ! -s release_notes.md ]; then
-              echo "Release $VERSION" > release_notes.md
-            fi
-          else
-            echo "Release $VERSION" > release_notes.md
-          fi
-
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          name: v${{ steps.changelog.outputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
           body_path: release_notes.md
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.version.outputs.is_prerelease }}
           files: |
             release/axelrod-rs-linux-x86_64
             release/axelrod-rs-windows-x86_64.exe
             release/axelrod-rs-macos-x86_64
             release/axelrod-rs-macos-aarch64
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUBE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
