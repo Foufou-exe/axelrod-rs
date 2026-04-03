@@ -1,6 +1,13 @@
 name: Release
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'Cargo.toml'
+    tags:
+      - 'v*'
   push:
     branches:
       - main
