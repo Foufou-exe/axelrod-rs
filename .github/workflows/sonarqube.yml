@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0  # Shallow clones disabled for better analysis relevancy
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, llvm-tools-preview
 
