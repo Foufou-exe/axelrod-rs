@@ -1,6 +1,6 @@
 [package]
 name = "axelrod-rs"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2024"
 authors = ["Thibaut Maurras"]
 description = "High-performance Iterated Prisoner's Dilemma simulator inspired by Robert Axelrod's tournaments"
